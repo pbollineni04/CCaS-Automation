@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+id_rsa*
+
+# Logs
+*.log
+
+# Local tooling
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+.claude/settings.local.json
+
+# Non-project local files
+resume_update/
+
+# OS files
+.DS_Store
+Thumbs.db

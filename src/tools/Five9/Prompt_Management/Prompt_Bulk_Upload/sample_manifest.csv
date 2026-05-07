@@ -1,0 +1,6 @@
+name,type,source,description,overwrite
+Welcome_Prompt,wav,./wavs/welcome.wav,Welcome greeting,false
+Main_Menu,tts,"Press 1 for sales, press 2 for support",Main IVR menu,false
+Hold_Music,wav,./wavs/hold.wav,Hold music loop,true
+After_Hours,tts,"Thank you for calling. Our office is currently closed. Please call back during business hours.",After hours message,false
+Voicemail_Greeting,wav,./wavs/voicemail.wav,Voicemail greeting,true

@@ -1,0 +1,322 @@
+
+
+--- PAGE 1 ---
+Configuration Web 
+Services API 
+5 May 2026 
+
+
+--- PAGE 2 ---
+About Five9 
+Five9 is the leading provider of cloud contact center software, bringing the power of 
+the cloud to thousands of customers and facilitating more than three billion 
+customer interactions annually. Since 2001, Five9 has led the cloud revolution in 
+contact centers, delivering software to help organizations of every size transition 
+from premise-based software to the cloud. With its extensive expertise, technology, 
+and ecosystem of partners, Five9 delivers secure, reliable, scalable cloud contact 
+center software to help businesses create exceptional customer experiences, 
+increase agent productivity and deliver tangible results. For more information visit 
+www.five9.com. 
+Trademarks 
+Five9® 
+Five9 Logo 
+Five9® SoCoCare™ 
+Five9® Connect™ 
+Five9 and the Five9 logo are registered trademarks of Five9 and its subsidiaries in the United States 
+and other countries. Other marks and brands may be claimed as the property of others. The product 
+plans, specifications, and descriptions herein are provided for information only and subject to change 
+without notice, and are provided without warranty of any kind, express or implied. Copyright © 2026 
+Five9, Inc. 
+2 Configuration Web Services API
+
+
+--- PAGE 3 ---
+Contents 
+About the Five9 Configuration Web Services API . . . . . . . . . . . . . . . . . . . . . .  4 
+Web Services Platform . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  5 
+Differences Among Versions 4, 3, 2, and Default . . . . . . . . . . . . . . . . . . . . . . .  6 
+Basic Access Authentication . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  11 
+3 Configuration Web Services API
+
+
+--- PAGE 4 ---
+About the Five9 Configuration Web Services 
+API 
+The Five9 Configuration Web Services enable you to build secure applications 
+to access, configure, manage, and synchronize call center information with 
+work flow-management systems, such as lead management, CRM, and ERP 
+systems. 
+This guide is intended for developers who understand these technologies and 
+protocols: 
+• Client-server architecture and Web services 
+• SOAP, HTTP, and XML 
+• JSP, ASP, CGI, or Perl 
+• Computer-telephony integration concepts, processes, events, and call 
+routing 
+• Overall call center integration and configuration 
+Note: 
+Five9 Configuration Web Services uses the swaRef.xsd to include binary 
+content for types that are used to upload greetings in WAV format. 
+If you use Apache CXF, be aware that it does not support swaRef.xsd types. 
+Before the SOAP envelope, it inserts text for which Five9 returns this 
+exception: 
+Exception=javax.xml.ws.soap.SOAPFaultException: org.xml.sax.SAXParseException: Content is not allowed in prolog. 
+ 
+To prevent this issue, remove the SwaOutputInterceptor Apache CXF proxy 
+class. However, with this fix, you cannot use Five9 methods that uses the 
+4 Configuration Web Services API
+
+
+--- PAGE 5 ---
+swaRef types. 
+Web Services Platform 
+Your client sends Web service requests that are acknowledged by Five9 with 
+a Web services response. Your client needs to check periodically for the 
+status and outcome of the operations requested. The Web services API 
+contains the XML-encoded SOAP methods used to communicate with your 
+client application. 
+Five9 recommends that you use the latest version. Previous versions are still 
+supported but are not recommended because they do not contain all the 
+features. Five9username is the user name of the administrator: 
+Note: 
+In the rest of this guide, the features that apply to these versions are 
+highlighted. Release 13 supports SOAP web services but adds no new 
+features. 
+Use the appropriate data center for your location: 
+US: api.five9.com 
+UK: api.five9.eu 
+Canada: api.five9.ca 
+Frankfurt: api.eu.five9.com 
+• Version 13: https://api.five9.com/wsadmin/v13/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 12: https://api.five9.com/wsadmin/v12/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 11: https://api.five9.com/wsadmin/v11/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 10.2: https://api.five9.com/wsadmin/v10_2/
+AdminWebService?wsdl&user=<Five9username> 
+About the Five9 Configuration Web Services API
+5 Configuration Web Services API
+
+
+--- PAGE 6 ---
+• Version 10: https://api.five9.com/wsadmin/v10/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 9.5: https://api.five9.com/wsadmin/v9_5/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 9.3: https://api.five9.com/wsadmin/v9_3/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 4: https://api.five9.com/wsadmin/v4/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 3: https://api.five9.com/wsadmin/v3/
+AdminWebService?wsdl&user=<Five9username> 
+• Version 2: https://api.five9.com/wsadmin/v2/
+AdminWebService?wsdl&user=<Five9username> 
+• Default version (common to all versions): https://api.five9.com/
+wsadmin/AdminWebService?wsdl&user=<Five9username> 
+To ensure that connections are secure, send all requests by Transport Layer 
+Security protocol (HTTPS) or VPN (IPSec or SSH) to the URL for your 
+version, for example: 
+https://api.five9.com/
+wsadmin[/<version>]/AdminWebService 
+Differences Among Versions 4, 3, 2, and Default 
+The differences between API versions 4, 3, 2, and the default are listed in this 
+table. 
+ Version 4 Version 3 Version 2 Default 
+Data Types 
+adminPerm
+issionTyp Added Added 
+About the Five9 Configuration Web Services API
+6 Configuration Web Services API
+
+
+--- PAGE 7 ---
+ Version 4 Version 3 Version 2 Default 
+e 
+apiOperat
+ionType 
+( VIVRCreat
+eSession 
+Version 3) 
+Added 
+basicImpo
+rtResult 
+( importTro
+ubles , 
+keyFields
+Version 3 ) 
+Added 
+basicImpo
+rtSetting
+s 
+( countryCo
+de, 
+failOnFie
+ldParseErr
+or ) 
+Added Added 
+campaignS
+trategies New 
+campaignS
+trategy New 
+campaignS
+trategyFil New 
+About the Five9 Configuration Web Services API
+7 Configuration Web Services API
+
+
+--- PAGE 8 ---
+ Version 4 Version 3 Version 2 Default 
+ter 
+campaignS
+trategyPer
+iod 
+New 
+contactFi
+eldRestric
+tion 
+( isEnable
+d) 
+Deleted Added 
+importTro
+uble New 
+importTro
+ubleKind New 
+listDiali
+ngMode(cha
+tEnabled, 
+visualMode
+Enabled) 
+Added 
+listDiali
+ngMode(EXT
+ENDED_STR
+ATEGY) 
+Added 
+About the Five9 Configuration Web Services API
+8 Configuration Web Services API
+
+
+--- PAGE 9 ---
+ Version 4 Version 3 Version 2 Default 
+listUpdat
+eSimpleSet
+tings 
+( countryCo
+de) 
+Added New 
+passwordP
+olicies 
+( entryValu
+es) 
+Modified Added Modified 
+passwordP
+olicyEntri
+es 
+Removed Added Removed 
+passwordP
+olicyEntry
+Value 
+Removed Added Removed 
+superviso
+rPermissio
+nType 
+( CanViewTe
+xtDetailsT
+ab 
+Version 3 
+, 
+CanAccess
+ShowField
+s 
+Added 
+About the Five9 Configuration Web Services API
+9 Configuration Web Services API
+
+
+--- PAGE 10 ---
+ Version 4 Version 3 Version 2 Default 
+Version 3 
+Methods 
+addRecord
+ToListSimp
+le 
+New 
+createCon
+tactField Modified Modified Modified 
+getCampai
+gnStrategi
+es 
+New 
+getContac
+tFields Modified Modified Modified 
+modifyCon
+tactField Modified Modified Modified 
+setCampai
+gnStrategi
+es 
+New 
+setDefaul
+tIVRSchedu
+le 
+Added 
+About the Five9 Configuration Web Services API
+10 Configuration Web Services API
+
+
+--- PAGE 11 ---
+ Version 4 Version 3 Version 2 Default 
+( isVisualM
+odeEnabled 
+Version 3 
+Version 3 
+, 
+isChatEna
+bled ) 
+Exceptions 
+AddRecord
+ToListFaul
+t 
+New 
+CommonCam
+paignFaul
+t 
+Version 3 
+New 
+WrongList
+DialingMod
+eFault 
+New 
+Basic Access Authentication 
+Your HTTPS requests must provide valid Five9 credentials for basic access 
+authentication, which is used by the Web services API to enforce access 
+control. 
+The credentials included in the header should be those of an administrator. 
+About the Five9 Configuration Web Services API
+11 Configuration Web Services API
+
+
+--- PAGE 12 ---
+Five9 recommends that you create several administrator users reserved for 
+the Web Services if you plan to send multiple concurrent requests. Otherwise, 
+if you try to use the same user name and password for multiple concurrent 
+requests, your requests are denied, and you receive an exception. The 
+administrator user must have the VCC Administrator role. Be sure to set the 
+appropriate permissions for each administrator. 
+With HTTP basic authentication, the user name and password are encoded in 
+base 64. In your client, construct your authorization header as follows: 
+1. Concatenate the user name and password, for example: 
+ExampleUsername:ExamplePassword 
+2. Encode the string in base 64, for example: 
+RXhhbXBsZVVzZXJOYW1lOkV4YW1wbGVQYXNzd29yZA== 
+3. In your client, include the Authorization header with the value Basic 
+<base64-encoded string>. 
+Example: 
+Web services header with encoded user name and password. 
+Copy 
+POST https://api.five9.com/wsadmin/AdminWebService HTT
+P/1.1Accept-Encoding: gzip,deflateContent-Type: text/xm
+l;charset=UTF-8SOAPAction: ""Authorization: Basic RXhhb
+XBsZVVzZXJOYW1lOkV4YW1wbGVQYXNzd29yZA== 
+About the Five9 Configuration Web Services API
+12 Configuration Web Services API

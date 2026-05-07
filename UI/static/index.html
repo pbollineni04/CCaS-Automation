@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCaaS Automation Tools</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-bg: #16192a;
+    --sidebar-hover: #1f2340;
+    --sidebar-active: #2a2f52;
+    --sidebar-text: #a0a8c8;
+    --sidebar-text-bright: #e0e4f4;
+    --sidebar-accent: #4a6cf7;
+    --sidebar-border: #252846;
+    --header-bg: #0f1120;
+    --content-bg: #f4f5f9;
+    --card-bg: #ffffff;
+    --text: #1a1d2e;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --input-border: #d1d5db;
+    --input-focus: #4a6cf7;
+    --btn-primary: #4a6cf7;
+    --btn-primary-hover: #3b5ce4;
+    --btn-secondary: #6b7280;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --yellow: #b45309;
+    --yellow-bg: #fffbeb;
+    --cyan: #0e7490;
+    --cyan-bg: #ecfeff;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --gray-bg: #f9fafb;
+  }
+
+  html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }
+
+  /* Layout */
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  header {
+    background: var(--header-bg);
+    color: #fff;
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #252846;
+  }
+  header .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: #fff; }
+  header .logo span { color: var(--sidebar-accent); }
+  header .badge {
+    background: #252846;
+    color: var(--sidebar-text);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  #body { display: flex; flex: 1; overflow: hidden; }
+
+  /* Sidebar */
+  #sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--sidebar-bg);
+    overflow-y: auto;
+    border-right: 1px solid var(--sidebar-border);
+    padding: 12px 0;
+  }
+
+  .tree-section-label {
+    color: #4a5080;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 16px 4px;
+  }
+
+  .tree-node { user-select: none; }
+
+  .tree-node-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    cursor: pointer;
+    color: var(--sidebar-text);
+    font-weight: 500;
+    transition: background 0.1s, color 0.1s;
+  }
+  .tree-node-header:hover { background: var(--sidebar-hover); color: var(--sidebar-text-bright); }
+  .tree-node-header.active { background: var(--sidebar-active); color: #fff; }
+
+  .tree-node-header .chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    opacity: 0.6;
+  }
+  .tree-node-header.open .chevron { transform: rotate(90deg); }
+
+  .tree-node-header .icon { font-size: 14px; flex-shrink: 0; }
+
+  .tree-node-children { display: none; }
+  .tree-node-children.open { display: block; }
+
+  .tree-leaf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px 6px 36px;
+    cursor: pointer;
+    color: var(--sidebar-text);
+    transition: background 0.1s, color 0.1s;
+    font-weight: 400;
+  }
+  .tree-leaf:hover { background: var(--sidebar-hover); color: var(--sidebar-text-bright); }
+  .tree-leaf.active { background: var(--sidebar-active); color: #fff; border-left: 2px solid var(--sidebar-accent); }
+  .tree-leaf .icon { font-size: 13px; }
+
+  /* Content */
+  #content {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--content-bg);
+    padding: 28px 32px;
+  }
+
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    text-align: center;
+    gap: 8px;
+  }
+  .welcome .big-icon { font-size: 48px; opacity: 0.3; }
+  .welcome h2 { font-size: 18px; color: var(--text); font-weight: 600; }
+  .welcome p { font-size: 13px; }
+
+  /* Tool panel */
+  .tool-panel { max-width: 720px; }
+
+  .tool-header { margin-bottom: 24px; }
+  .tool-header .breadcrumb {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .tool-header .breadcrumb span { color: var(--sidebar-accent); }
+  .tool-header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+  .tool-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .form-grid { display: grid; gap: 14px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 13px; font-weight: 500; color: var(--text); }
+  .field .hint { font-size: 11px; color: var(--text-muted); }
+
+  /* Path input with browse button */
+  .path-row { display: flex; gap: 6px; }
+  .path-row input { flex: 1; }
+  .btn-browse {
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    background: var(--gray-bg);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .btn-browse:hover { background: #e9ebf0; border-color: #adb5c2; }
+  .btn-browse:active { background: #dde0e8; }
+  .btn-browse:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  input[type="text"], input[type="password"], select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--btn-primary); }
+  .checkbox-row label { font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  button {
+    padding: 9px 20px;
+    border-radius: 7px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary { background: var(--btn-primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
+
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--input-border);
+    color: var(--text-muted);
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-bg); color: var(--text); }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  .results-card { display: none; }
+  .results-card.visible { display: block; }
+
+  .summary-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pill.created  { background: var(--green-bg);  color: var(--green); }
+  .pill.updated  { background: var(--yellow-bg); color: var(--yellow); }
+  .pill.skipped  { background: var(--cyan-bg);   color: var(--cyan); }
+  .pill.failed   { background: var(--red-bg);    color: var(--red); }
+  .pill.total    { background: #f3f4f6;           color: #374151; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    background: var(--gray-bg);
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  .action-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .action-badge.created  { background: var(--green-bg);  color: var(--green); }
+  .action-badge.updated  { background: var(--yellow-bg); color: var(--yellow); }
+  .action-badge.skipped  { background: var(--cyan-bg);   color: var(--cyan); }
+  .action-badge.failed   { background: var(--red-bg);    color: var(--red); }
+  .action-badge.dry-run  { background: #f3f4f6;           color: #374151; }
+
+  .error-text { color: var(--red); font-size: 12px; font-family: monospace; }
+
+  .alert {
+    padding: 10px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .alert.error { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+  .alert.success { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; }
+
+  /* Mode tabs */
+  .mode-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; width: fit-content; }
+  .mode-tab {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: #fff;
+    color: var(--text-muted);
+    transition: background 0.12s, color 0.12s;
+    font-family: inherit;
+  }
+  .mode-tab:not(:last-child) { border-right: 1px solid var(--border); }
+  .mode-tab.active { background: var(--btn-primary); color: #fff; }
+  .mode-tab:hover:not(.active) { background: var(--gray-bg); color: var(--text); }
+
+  .mode-section { display: none; }
+  .mode-section.active { display: contents; }
+
+  /* Credentials load button */
+  .cred-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--sidebar-accent);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .btn-link:hover { color: var(--btn-primary-hover); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">CCa<span>a</span>S <span style="font-weight:300">Automation</span></div>
+    <div class="badge">Tools</div>
+  </header>
+  <div id="body">
+    <aside id="sidebar">
+      <div class="tree-section-label">Platforms</div>
+      <div id="tree"></div>
+    </aside>
+    <main id="content">
+      <div class="welcome" id="welcome">
+        <div class="big-icon">&#9881;</div>
+        <h2>Select a tool</h2>
+        <p>Choose a tool from the sidebar to get started.</p>
+      </div>
+      <div class="tool-panel" id="tool-panel" style="display:none"></div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Tool tree definition — mirrors the codebase folder structure
+// ---------------------------------------------------------------------------
+const TREE = [
+  {
+    id: "five9",
+    label: "Five9",
+    icon: "&#128222;",
+    children: [
+      {
+        id: "five9.prompt_management",
+        label: "Prompt Management",
+        icon: "&#128266;",
+        children: [
+          {
+            id: "five9.prompt_bulk_upload",
+            label: "Prompt Bulk Upload",
+            icon: "&#128196;",
+            tool: true,
+          }
+        ]
+      }
+    ]
+  }
+];
+
+// ---------------------------------------------------------------------------
+// Tool form definitions
+// ---------------------------------------------------------------------------
+const TOOLS = {
+  "five9.prompt_bulk_upload": {
+    platform: "Five9",
+    category: "Prompt Management",
+    name: "Prompt Bulk Upload",
+    description: "Create or update multiple prompts (WAV and TTS) from a CSV manifest.",
+    endpoint: "/api/run/five9/prompt-bulk-upload",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderPromptBulkUploadForm,
+    collect: collectPromptBulkUploadForm,
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Sidebar tree rendering
+// ---------------------------------------------------------------------------
+function renderTree(nodes, container) {
+  nodes.forEach(node => {
+    const el = document.createElement("div");
+    el.className = "tree-node";
+
+    if (node.tool) {
+      el.innerHTML = `
+        <div class="tree-leaf" data-tool="${node.id}">
+          <span class="icon">${node.icon}</span>
+          ${node.label}
+        </div>`;
+      el.querySelector(".tree-leaf").addEventListener("click", () => selectTool(node.id));
+    } else {
+      el.innerHTML = `
+        <div class="tree-node-header open" data-id="${node.id}">
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <span class="icon">${node.icon}</span>
+          ${node.label}
+        </div>
+        <div class="tree-node-children open" data-children="${node.id}"></div>`;
+
+      el.querySelector(".tree-node-header").addEventListener("click", function() {
+        this.classList.toggle("open");
+        el.querySelector(".tree-node-children").classList.toggle("open");
+      });
+
+      if (node.children) {
+        renderTree(node.children, el.querySelector(".tree-node-children"));
+      }
+    }
+
+    container.appendChild(el);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tool selection
+// ---------------------------------------------------------------------------
+let currentTool = null;
+
+function selectTool(toolId) {
+  // Update sidebar active state
+  document.querySelectorAll(".tree-leaf").forEach(el => el.classList.remove("active"));
+  const leaf = document.querySelector(`[data-tool="${toolId}"]`);
+  if (leaf) leaf.classList.add("active");
+
+  currentTool = toolId;
+  document.getElementById("welcome").style.display = "none";
+  const panel = document.getElementById("tool-panel");
+  panel.style.display = "block";
+
+  const tool = TOOLS[toolId];
+  if (!tool) return;
+
+  panel.innerHTML = `
+    <div class="tool-header">
+      <div class="breadcrumb">${tool.platform} &rsaquo; <span>${tool.category}</span></div>
+      <h1>${tool.name}</h1>
+      <p>${tool.description}</p>
+    </div>
+    <div id="tool-form"></div>
+    <div id="results-area"></div>`;
+
+  tool.render(document.getElementById("tool-form"), tool);
+}
+
+// ---------------------------------------------------------------------------
+// Prompt Bulk Upload — form
+// ---------------------------------------------------------------------------
+function renderPromptBulkUploadForm(container, tool) {
+  container.innerHTML = `
+    <form id="bulk-upload-form" onsubmit="return false">
+
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="tab-csv" onclick="setUploadMode('csv')">CSV Manifest</button>
+        <button type="button" class="mode-tab" id="tab-wav" onclick="setUploadMode('wav')">WAV Folder</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Configuration</div>
+        <div class="form-grid">
+
+          <!-- CSV mode fields -->
+          <div class="mode-section active" id="mode-csv-fields">
+            <div class="field">
+              <label>Manifest File</label>
+              <div class="path-row">
+                <input type="text" id="f-manifest" placeholder="C:\path\to\prompts.csv">
+                <button type="button" class="btn-browse" onclick="browseFile('f-manifest', 'csv', 'Select CSV manifest')">Browse&hellip;</button>
+              </div>
+              <span class="hint">CSV manifest listing prompts to upload. <a href="#" onclick="loadSample(); return false" style="color:var(--sidebar-accent)">Use sample</a></span>
+            </div>
+            <div class="field">
+              <label>WAV Directory</label>
+              <div class="path-row">
+                <input type="text" id="f-wavdir" value="." placeholder=".">
+                <button type="button" class="btn-browse" onclick="browseDirectory('f-wavdir', 'Select WAV folder')">Browse&hellip;</button>
+              </div>
+              <span class="hint">Base directory for relative WAV paths in the manifest.</span>
+            </div>
+          </div>
+
+          <!-- WAV folder mode fields -->
+          <div class="mode-section" id="mode-wav-fields">
+            <div class="field">
+              <label>WAV Folder</label>
+              <div class="path-row">
+                <input type="text" id="f-wav-folder" placeholder="C:\path\to\wavs">
+                <button type="button" class="btn-browse" onclick="browseDirectory('f-wav-folder', 'Select folder containing WAV files')">Browse&hellip;</button>
+              </div>
+              <span class="hint">All .wav files in this folder will be uploaded. Prompt name = filename without extension.</span>
+            </div>
+            <div class="field">
+              <label class="checkbox-row" style="margin-top:4px">
+                <input type="checkbox" id="f-overwrite">
+                <span>Overwrite existing prompts</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Shared fields -->
+          <div class="field">
+            <label>Domain</label>
+            <select id="f-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Credentials</div>
+          <button type="button" class="btn-link" id="load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="f-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="f-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Options</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="f-dryrun">
+          <label for="f-dryrun">Dry run — validate and preview actions, no API calls</label>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.prompt_bulk_upload')">
+          Run Upload
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint);
+  });
+}
+
+let uploadMode = "csv";
+
+function setUploadMode(mode) {
+  uploadMode = mode;
+  document.getElementById("tab-csv").classList.toggle("active", mode === "csv");
+  document.getElementById("tab-wav").classList.toggle("active", mode === "wav");
+  document.getElementById("mode-csv-fields").classList.toggle("active", mode === "csv");
+  document.getElementById("mode-wav-fields").classList.toggle("active", mode === "wav");
+  clearResults();
+}
+
+function loadSample() {
+  // Pre-fill the manifest path with the sample file path from the project
+  const samplePath = String.raw`C:\Users\jrgoo\Desktop\CCaS Automation\Five9\Prompt_Management\Prompt_Bulk_Upload\sample_manifest.csv`;
+  document.getElementById("f-manifest").value = samplePath;
+}
+
+function collectPromptBulkUploadForm() {
+  const shared = {
+    domain: document.getElementById("f-domain").value,
+    username: document.getElementById("f-username").value.trim(),
+    password: document.getElementById("f-password").value,
+    dry_run: document.getElementById("f-dryrun").checked,
+  };
+  if (uploadMode === "wav") {
+    return {
+      _endpoint: "/api/run/five9/prompt-bulk-upload-wav",
+      wav_dir: document.getElementById("f-wav-folder").value.trim(),
+      overwrite: document.getElementById("f-overwrite").checked,
+      ...shared,
+    };
+  }
+  return {
+    _endpoint: "/api/run/five9/prompt-bulk-upload",
+    manifest_path: document.getElementById("f-manifest").value.trim(),
+    wav_dir: document.getElementById("f-wavdir").value.trim() || ".",
+    ...shared,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Load credentials from server .env
+// ---------------------------------------------------------------------------
+async function loadCredentials(endpoint) {
+  const btn = document.getElementById("load-creds-btn");
+  btn.textContent = "Loading...";
+  btn.disabled = true;
+  try {
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if (data.username) document.getElementById("f-username").value = data.username;
+    if (data.password) document.getElementById("f-password").value = data.password;
+    if (data.domain) {
+      const sel = document.getElementById("f-domain");
+      const opt = [...sel.options].find(o => o.value === data.domain);
+      if (opt) sel.value = data.domain;
+    }
+    btn.textContent = "Loaded";
+    setTimeout(() => { btn.textContent = "Load from .env"; btn.disabled = false; }, 1500);
+  } catch (e) {
+    btn.textContent = "Failed";
+    btn.disabled = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Run tool
+// ---------------------------------------------------------------------------
+async function runTool(toolId) {
+  const tool = TOOLS[toolId];
+  const payload = tool.collect();
+  const resultsArea = document.getElementById("results-area");
+  const runBtn = document.getElementById("run-btn");
+
+  runBtn.disabled = true;
+  runBtn.innerHTML = `<span class="spinner"></span> Running...`;
+  resultsArea.innerHTML = "";
+
+  const endpoint = payload._endpoint || tool.endpoint;
+  delete payload._endpoint;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      resultsArea.innerHTML = `<div class="alert error">Error: ${data.detail || res.statusText}</div>`;
+      return;
+    }
+
+    renderResults(resultsArea, data, payload.dry_run);
+  } catch (e) {
+    resultsArea.innerHTML = `<div class="alert error">Network error: ${e.message}</div>`;
+  } finally {
+    runBtn.disabled = false;
+    runBtn.innerHTML = "Run Upload";
+  }
+}
+
+function clearResults() {
+  const area = document.getElementById("results-area");
+  if (area) area.innerHTML = "";
+}
+
+// ---------------------------------------------------------------------------
+// Results rendering
+// ---------------------------------------------------------------------------
+function renderResults(container, data, isDryRun) {
+  const { results, summary } = data;
+
+  const badgeClass = action => {
+    if (action.startsWith("[dry-run]")) return "dry-run";
+    return action;
+  };
+
+  const pillsHtml = `
+    <div class="summary-pills">
+      <span class="pill total">${summary.total} total</span>
+      ${summary.created  ? `<span class="pill created">${summary.created} created</span>` : ""}
+      ${summary.updated  ? `<span class="pill updated">${summary.updated} updated</span>` : ""}
+      ${summary.skipped  ? `<span class="pill skipped">${summary.skipped} skipped</span>` : ""}
+      ${summary.failed   ? `<span class="pill failed">${summary.failed} failed</span>` : ""}
+    </div>`;
+
+  const rowsHtml = results.map(r => `
+    <tr>
+      <td>${escHtml(r.name)}</td>
+      <td>${escHtml(r.type)}</td>
+      <td><span class="action-badge ${badgeClass(r.action)}">${escHtml(r.action)}</span></td>
+      <td>${r.error ? `<span class="error-text">${escHtml(r.error)}</span>` : ""}</td>
+    </tr>`).join("");
+
+  const alertClass = summary.failed > 0 ? "error" : "success";
+  const alertMsg = summary.failed > 0
+    ? `${summary.failed} prompt(s) failed.`
+    : isDryRun
+      ? "Dry run complete — no changes made."
+      : "All prompts processed successfully.";
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Results ${isDryRun ? "(Dry Run)" : ""}</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      ${pillsHtml}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Action</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function escHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ---------------------------------------------------------------------------
+// File / folder pickers — call backend which opens native OS dialog
+// ---------------------------------------------------------------------------
+async function browseFile(inputId, filter, title) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = "…";
+  try {
+    const res = await fetch(`/api/pick/file?filter=${encodeURIComponent(filter)}&title=${encodeURIComponent(title)}`);
+    const data = await res.json();
+    if (data.path) document.getElementById(inputId).value = data.path;
+  } catch (e) {
+    console.error("Picker error:", e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Browse&hellip;";
+  }
+}
+
+async function browseDirectory(inputId, title) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = "…";
+  try {
+    const res = await fetch(`/api/pick/directory?title=${encodeURIComponent(title)}`);
+    const data = await res.json();
+    if (data.path) document.getElementById(inputId).value = data.path;
+  } catch (e) {
+    console.error("Picker error:", e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Browse&hellip;";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+renderTree(TREE, document.getElementById("tree"));
+</script>
+</body>
+</html>

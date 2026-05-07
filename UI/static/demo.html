@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approval-Gated CCaaS Configuration Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --ink: #172033;
+    --muted: #687083;
+    --border: #dde3ee;
+    --strong-border: #c7d0de;
+    --accent: #2857c8;
+    --accent-dark: #2048aa;
+    --green: #168343;
+    --green-bg: #e9f8ee;
+    --amber: #9f5808;
+    --amber-bg: #fff6df;
+    --red: #bc2f32;
+    --shadow: 0 14px 36px rgba(21, 31, 52, 0.09);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  header {
+    min-height: 62px;
+    background: #111827;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 12px 28px;
+    border-bottom: 1px solid #243044;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .mode-banner {
+    color: #163d28;
+    background: #dff6e8;
+    border: 1px solid #8ad5a6;
+    border-radius: 6px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  main {
+    width: min(1480px, calc(100vw - 48px));
+    margin: 24px auto 36px;
+  }
+
+  .workflow {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .workflow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .workflow-step.active {
+    border-color: #9bb6ff;
+    color: var(--accent);
+    background: #f1f5ff;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 0.92fr) minmax(520px, 1.38fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--border);
+    background: #fbfcfe;
+  }
+
+  .panel-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #364154;
+  }
+
+  .panel-body { padding: 18px; }
+
+  textarea {
+    width: 100%;
+    min-height: 690px;
+    resize: vertical;
+    border: 1px solid var(--strong-border);
+    border-radius: 7px;
+    padding: 14px;
+    color: var(--ink);
+    background: #fff;
+    font: 13px/1.52 Consolas, "SFMono-Regular", Menlo, monospace;
+    outline: none;
+  }
+
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(40, 87, 200, 0.12);
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  button {
+    min-height: 38px;
+    border: 0;
+    border-radius: 7px;
+    padding: 0 16px;
+    font: 700 13px/1 Inter, "Segoe UI", system-ui, sans-serif;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .btn-primary {
+    color: #fff;
+    background: var(--accent);
+  }
+
+  .btn-primary:hover:not(:disabled) { background: var(--accent-dark); }
+
+  .btn-secondary {
+    color: #334155;
+    background: #eef2f7;
+    border: 1px solid #d5ddea;
+  }
+
+  .status-note {
+    margin-top: 12px;
+    min-height: 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .status-note.error { color: var(--red); }
+  .status-note.success { color: var(--green); font-weight: 700; }
+
+  .right-stack {
+    display: grid;
+    gap: 16px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
+    gap: 16px;
+  }
+
+  .empty {
+    min-height: 120px;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    background: var(--surface-2);
+    border: 1px dashed var(--strong-border);
+    border-radius: 7px;
+    text-align: center;
+    padding: 18px;
+  }
+
+  .group {
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .group h3 {
+    margin: 0;
+    padding: 9px 11px;
+    font-size: 12px;
+    color: #2d3748;
+    background: #f6f8fb;
+    border-bottom: 1px solid var(--border);
+  }
+
+  ul {
+    margin: 0;
+    padding: 10px 12px 10px 28px;
+  }
+
+  li { margin-bottom: 6px; }
+  li:last-child { margin-bottom: 0; }
+
+  .call-list {
+    display: grid;
+    gap: 9px;
+  }
+
+  .call {
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: #fff;
+    padding: 11px;
+  }
+
+  .call-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .call-name {
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    color: #123f91;
+    font-weight: 800;
+    font-size: 12px;
+  }
+
+  .call-number {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #293244;
+    background: #f8fafc;
+    border: 1px solid #e5eaf2;
+    border-radius: 6px;
+    padding: 9px;
+    font: 12px/1.45 Consolas, "SFMono-Regular", Menlo, monospace;
+  }
+
+  .approval-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px;
+    background: var(--amber-bg);
+    border: 1px solid #f2cf83;
+  }
+
+  .approval-copy strong {
+    display: block;
+    color: #583508;
+    margin-bottom: 3px;
+  }
+
+  .approval-copy span {
+    color: var(--amber);
+    font-size: 13px;
+  }
+
+  .logs {
+    display: grid;
+    gap: 9px;
+    max-height: 370px;
+    overflow: auto;
+  }
+
+  .log-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.9fr) minmax(260px, 1.3fr) 150px 72px 78px;
+    gap: 8px;
+    align-items: start;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px;
+    background: #fff;
+  }
+
+  .log-label {
+    display: none;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 0 9px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .badge.stub { color: #174124; background: var(--green-bg); }
+  .badge.success { color: #174124; background: #d8f2e0; }
+
+  @media (max-width: 1120px) {
+    .grid, .results-grid { grid-template-columns: 1fr; }
+    textarea { min-height: 480px; }
+  }
+
+  @media (max-width: 760px) {
+    header {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 14px 16px;
+    }
+    main { width: calc(100vw - 24px); margin-top: 14px; }
+    .workflow { grid-template-columns: 1fr; }
+    .panel-body, .panel-header { padding: 14px; }
+    .approval-box { flex-direction: column; align-items: stretch; }
+    .actions { flex-direction: column; align-items: stretch; }
+    button { width: 100%; }
+    .log-row { grid-template-columns: 1fr; }
+    .log-label { display: block; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark">C</div>
+    <h1>Approval-Gated CCaaS Configuration Agent</h1>
+  </div>
+  <div class="mode-banner">STUB MODE - No live platform changes</div>
+</header>
+
+<main>
+  <section class="workflow" aria-label="Demo workflow">
+    <div class="workflow-step active" id="step-input">Input</div>
+    <div class="workflow-step" id="step-extracted">Extracted Requirements</div>
+    <div class="workflow-step" id="step-planned">Planned Five9 Operations</div>
+    <div class="workflow-step" id="step-approval">Approval</div>
+    <div class="workflow-step" id="step-log">Stub Execution Log</div>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Discovery Template Input</h2>
+      </div>
+      <div class="panel-body">
+        <textarea id="discovery-input" spellcheck="false"></textarea>
+        <div class="actions">
+          <button class="btn-primary" id="analyze-btn">Analyze Requirements</button>
+          <button class="btn-secondary" id="reset-btn">Reset Sample</button>
+        </div>
+        <div class="status-note" id="analysis-status"></div>
+      </div>
+    </section>
+
+    <div class="right-stack">
+      <div class="results-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Extracted Requirements</h2>
+          </div>
+          <div class="panel-body" id="requirements-panel">
+            <div class="empty">Run analysis to view grouped requirements.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Planned Five9 Operations</h2>
+          </div>
+          <div class="panel-body" id="operations-panel">
+            <div class="empty">Planned stub operations will appear here.</div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="approval-box">
+          <div class="approval-copy">
+            <strong>These changes require human approval before execution.</strong>
+            <span>No live platform changes will be made. This demo executes stubbed operations only.</span>
+          </div>
+          <button class="btn-primary" id="approve-btn" disabled>Approve &amp; Run Stub Execution</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Stub Execution Log</h2>
+        </div>
+        <div class="panel-body">
+          <div id="log-panel">
+            <div class="empty">Approval-gated stub logs will appear here.</div>
+          </div>
+          <div class="status-note" id="execution-status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+const DEFAULT_DISCOVERY_TEMPLATE = `Client: Acme Health Services
+
+Business Hours:
+Monday-Friday, 8:00 AM-6:00 PM Eastern.
+After-hours callers should hear a closed message and route to voicemail.
+
+Queues:
+- Sales
+- Billing
+- Support
+
+Skills:
+- English
+- Spanish
+- Billing Specialist
+- Sales Specialist
+
+Dispositions:
+- Sale Completed
+- Billing Resolved
+- Follow Up Required
+- Transferred to Support
+
+Prompts:
+- Main greeting: "Thank you for calling Acme Health Services. Please listen carefully as our menu options have changed."
+- After-hours: "You have reached us outside normal business hours. Please leave a message and we will return your call."
+
+DNIS / Routing:
+- 800-555-0100 routes to Main IVR.
+- Main IVR option 1 routes to Sales queue.
+- Main IVR option 2 routes to Billing queue.
+- Main IVR option 3 routes to Support queue.
+
+IVR Intent:
+Create a simple main IVR that routes callers by menu selection and respects business hours.
+`;
+
+const input = document.getElementById("discovery-input");
+const analyzeBtn = document.getElementById("analyze-btn");
+const resetBtn = document.getElementById("reset-btn");
+const approveBtn = document.getElementById("approve-btn");
+const requirementsPanel = document.getElementById("requirements-panel");
+const operationsPanel = document.getElementById("operations-panel");
+const logPanel = document.getElementById("log-panel");
+const analysisStatus = document.getElementById("analysis-status");
+const executionStatus = document.getElementById("execution-status");
+
+let plannedCalls = [];
+
+input.value = DEFAULT_DISCOVERY_TEMPLATE;
+
+analyzeBtn.addEventListener("click", analyzeRequirements);
+resetBtn.addEventListener("click", () => {
+  input.value = DEFAULT_DISCOVERY_TEMPLATE;
+  clearAnalysis();
+});
+approveBtn.addEventListener("click", runStubExecution);
+
+async function analyzeRequirements() {
+  setBusy(analyzeBtn, true, "Analyzing...");
+  clearAnalysis();
+  analysisStatus.textContent = "";
+  analysisStatus.className = "status-note";
+
+  try {
+    const response = await fetch("/api/demo/analyze-requirements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discovery_template: input.value }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || "Analysis failed");
+
+    plannedCalls = payload.planned_calls;
+    renderRequirements(payload.requirements);
+    renderPlannedCalls(payload.planned_calls);
+    approveBtn.disabled = false;
+    analysisStatus.textContent = "Analysis complete. Review the plan, then approve stub execution.";
+    analysisStatus.classList.add("success");
+    markSteps(["input", "extracted", "planned", "approval"]);
+  } catch (error) {
+    analysisStatus.textContent = error.message;
+    analysisStatus.classList.add("error");
+    approveBtn.disabled = true;
+  } finally {
+    setBusy(analyzeBtn, false, "Analyze Requirements");
+  }
+}
+
+async function runStubExecution() {
+  setBusy(approveBtn, true, "Running Stubs...");
+  executionStatus.textContent = "";
+  executionStatus.className = "status-note";
+
+  try {
+    const response = await fetch("/api/demo/execute-stubs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approved: true, planned_calls: plannedCalls }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.detail || "Stub execution failed");
+
+    renderLogs(payload.logs);
+    executionStatus.textContent = payload.message;
+    executionStatus.classList.add("success");
+    markSteps(["input", "extracted", "planned", "approval", "log"]);
+  } catch (error) {
+    executionStatus.textContent = error.message;
+    executionStatus.classList.add("error");
+  } finally {
+    setBusy(approveBtn, false, "Approve & Run Stub Execution");
+    approveBtn.disabled = plannedCalls.length === 0;
+  }
+}
+
+function clearAnalysis() {
+  plannedCalls = [];
+  approveBtn.disabled = true;
+  requirementsPanel.innerHTML = `<div class="empty">Run analysis to view grouped requirements.</div>`;
+  operationsPanel.innerHTML = `<div class="empty">Planned stub operations will appear here.</div>`;
+  logPanel.innerHTML = `<div class="empty">Approval-gated stub logs will appear here.</div>`;
+  executionStatus.textContent = "";
+  executionStatus.className = "status-note";
+  markSteps(["input"]);
+}
+
+function renderRequirements(requirements) {
+  requirementsPanel.innerHTML = Object.entries(requirements).map(([group, items]) => `
+    <section class="group">
+      <h3>${escHtml(group)}</h3>
+      <ul>${items.map(item => `<li>${escHtml(item)}</li>`).join("")}</ul>
+    </section>
+  `).join("");
+}
+
+function renderPlannedCalls(calls) {
+  operationsPanel.innerHTML = `<div class="call-list">${calls.map((call, index) => `
+    <article class="call">
+      <div class="call-head">
+        <span class="call-name">${escHtml(call.tool_name)}</span>
+        <span class="call-number">#${String(index + 1).padStart(2, "0")}</span>
+      </div>
+      <pre>${escHtml(JSON.stringify(call.params, null, 2))}</pre>
+    </article>
+  `).join("")}</div>`;
+}
+
+function renderLogs(logs) {
+  logPanel.innerHTML = `<div class="logs">${logs.map(log => `
+    <div class="log-row">
+      <div><span class="log-label">Tool</span><span class="call-name">${escHtml(log.tool_name)}</span></div>
+      <div><span class="log-label">Params</span><pre>${escHtml(JSON.stringify(log.params, null, 2))}</pre></div>
+      <div><span class="log-label">Timestamp</span>${escHtml(log.timestamp)}</div>
+      <div><span class="log-label">Mode</span><span class="badge stub">${escHtml(log.mode)}</span></div>
+      <div><span class="log-label">Result</span><span class="badge success">${escHtml(log.result)}</span></div>
+    </div>
+  `).join("")}</div>`;
+}
+
+function markSteps(active) {
+  ["input", "extracted", "planned", "approval", "log"].forEach(step => {
+    document.getElementById(`step-${step}`).classList.toggle("active", active.includes(step));
+  });
+}
+
+function setBusy(button, busy, text) {
+  button.disabled = busy || (button === approveBtn && plannedCalls.length === 0);
+  button.textContent = text;
+}
+
+function escHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+</script>
+</body>
+</html>
