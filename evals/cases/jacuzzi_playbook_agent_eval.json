@@ -1,0 +1,54 @@
+{
+  "name": "jacuzzi_playbook_agent",
+  "description": "Jacuzzi converted Five9 voice implementation playbook must produce approval-ready Five9 operation inputs.",
+  "playbook_path": "outputs/playbook_template_work/Five9 Voice Implementation Playbook Template - Jacuzzi Fully Converted.xlsx",
+  "expected": {
+    "ai_modes": ["fallback", "claude", "openai", "gemini"],
+    "min_counts": {
+      "ai_planned_calls": 60,
+      "proposed_write_calls": 60,
+      "preflight_calls": 5,
+      "skills": 9,
+      "dispositions": 40,
+      "inbound_campaigns": 5,
+      "dnis": 1
+    },
+    "required_proposed_tools": [
+      "five9_create_skill",
+      "five9_create_disposition",
+      "five9_create_inbound_campaign",
+      "five9_add_skills_to_campaign",
+      "five9_add_dnis_to_campaign",
+      "five9_create_ivr_script"
+    ],
+    "required_preflight_tools": [
+      "five9_get_skills",
+      "five9_get_dispositions",
+      "five9_get_prompts",
+      "five9_get_campaigns",
+      "five9_get_dnis_list"
+    ],
+    "forbidden_proposed_tools": [
+      "five9_modify_ivr_script",
+      "five9_delete_ivr_script",
+      "five9_delete_skill",
+      "five9_modify_skill"
+    ],
+    "required_skill_names": [
+      "Main Agent - Tier 1",
+      "Costco - Tier 1"
+    ],
+    "required_campaign_names": [
+      "JBRx Sales Main Agent Inbound",
+      "JBRx Sales Costco Inbound"
+    ],
+    "required_dnis_numbers": [
+      "8008852569-sample"
+    ],
+    "ivr": {
+      "requires_script_name": true,
+      "requires_create_shell": true,
+      "forbid_xml_generation": true
+    }
+  }
+}

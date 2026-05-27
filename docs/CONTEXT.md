@@ -1,6 +1,6 @@
 # Docs Workspace
 
-Last updated: 2026-05-06
+Last updated: 2026-05-12
 
 Docs holds API notes, guides, onboarding material, and demo scripts. Use this workspace when producing material a stakeholder, engineer, or future agent can read without digging through source code.
 
@@ -32,9 +32,10 @@ Demo scripts use `demo-name_script.md`.
 
 ## Current Priorities
 
-1. CEO demo script for Phase 2: discovery template to Five9 stub calls
-2. Five9 prompt operation quick reference
-3. Architecture guide explaining orchestration, approval, stubs, and logging
+1. Operator guide for Five9 preflight, writes, modify/delete/rollback, and IVR builder
+2. CEO demo script: discovery template to approved Five9 dry-run/stub calls
+3. Architecture guide explaining orchestration, approval, dry-run/live modes, and logging
+4. Five9 prompt operation quick reference
 
 ## Good Docs Output
 

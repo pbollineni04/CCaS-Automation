@@ -1,12 +1,12 @@
 # UI Workspace
 
-Last updated: 2026-05-06
+Last updated: 2026-05-12
 
-The UI folder contains the local test interface for demonstrating the CCaaS Automation Agent. It is a FastAPI app with vanilla JavaScript served at `localhost:8000`.
+The UI folder contains the local operator interface for demonstrating and exercising approval-gated CCaaS tools. It is a FastAPI app with vanilla JavaScript served at `localhost:8000`.
 
 ## Purpose
 
-Use this workspace to test the Phase 2 demo flow: load or paste discovery-template content, send it to the agent, display proposed configuration calls, show approval status, and show stub execution logs.
+Use this workspace to test discovery-template demos, Five9 preflight reads, approval-gated dry-run/live tool packs, IVR XML discovery, and the IVR builder. UI code should call pack dispatchers and facades; business/tool behavior belongs in `src/`.
 
 ## Structure
 
@@ -14,7 +14,8 @@ Use this workspace to test the Phase 2 demo flow: load or paste discovery-templa
 UI/
   app.py              # FastAPI server
   requirements.txt    # UI runtime dependencies
-  static/index.html   # Vanilla JS frontend
+  static/index.html   # Main tools UI
+  static/demo.html    # Deterministic CEO demo flow
 ```
 
 ## Run Locally
@@ -30,8 +31,8 @@ py app.py
 
 - The UI is a demo harness, not the orchestration layer.
 - Do not put platform-specific planning logic in UI code.
-- Do not execute live API calls from the UI.
-- UI actions should call agent/tool code that enforces approval and stub/live mode.
+- Live calls from UI routes must require approval and credentials before creating clients.
+- UI actions should call agent/tool pack dispatchers and facades that enforce approval and dry-run/live mode.
 - Display logs with tool name, parameters, timestamp, mode, and result.
 
 ## Good UI Work

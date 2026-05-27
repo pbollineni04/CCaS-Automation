@@ -68,10 +68,11 @@
 
   /* Sidebar */
   #sidebar {
-    width: 230px;
+    width: 246px;
     flex-shrink: 0;
     background: var(--sidebar-bg);
     overflow-y: auto;
+    overflow-x: hidden;
     border-right: 1px solid var(--sidebar-border);
     padding: 12px 0;
   }
@@ -85,17 +86,21 @@
     padding: 8px 16px 4px;
   }
 
-  .tree-node { user-select: none; }
+  .tree-node {
+    --tree-level: 0;
+    user-select: none;
+  }
 
   .tree-node-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 16px;
+    padding: 6px 10px 6px calc(8px + (var(--tree-level) * 6px));
     cursor: pointer;
     color: var(--sidebar-text);
     font-weight: 500;
     transition: background 0.1s, color 0.1s;
+    line-height: 1.2;
   }
   .tree-node-header:hover { background: var(--sidebar-hover); color: var(--sidebar-text-bright); }
   .tree-node-header.active { background: var(--sidebar-active); color: #fff; }
@@ -111,18 +116,23 @@
 
   .tree-node-header .icon { font-size: 14px; flex-shrink: 0; }
 
-  .tree-node-children { display: none; }
+  .tree-node-children {
+    display: none;
+    margin-left: calc(8px + (var(--tree-level) * 6px));
+    border-left: 1px solid rgba(160, 168, 200, 0.14);
+  }
   .tree-node-children.open { display: block; }
 
   .tree-leaf {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 16px 6px 36px;
+    padding: 6px 10px 6px calc(22px + (var(--tree-level) * 6px));
     cursor: pointer;
     color: var(--sidebar-text);
     transition: background 0.1s, color 0.1s;
     font-weight: 400;
+    line-height: 1.2;
   }
   .tree-leaf:hover { background: var(--sidebar-hover); color: var(--sidebar-text-bright); }
   .tree-leaf.active { background: var(--sidebar-active); color: #fff; border-left: 2px solid var(--sidebar-accent); }
@@ -152,6 +162,7 @@
 
   /* Tool panel */
   .tool-panel { max-width: 720px; }
+  .tool-panel.wide { max-width: 1260px; }
 
   .tool-header { margin-bottom: 24px; }
   .tool-header .breadcrumb {
@@ -334,6 +345,289 @@
   }
   .alert.error { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
   .alert.success { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; }
+  .alert.warning { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fde68a; }
+
+  .preflight-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .preflight-data {
+    max-height: 170px;
+    overflow: auto;
+    background: #0f172a;
+    color: #e5e7eb;
+    border-radius: 7px;
+    padding: 10px 12px;
+    font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+  }
+  .tool-name { font-weight: 700; color: var(--text); }
+
+  /* IVR visual builder */
+  .ivr-builder-grid { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: stretch; }
+  .ivr-builder-stack { display: grid; gap: 16px; }
+  .ivr-builder-main { display: grid; gap: 16px; }
+  .module-palette { display: grid; gap: 8px; max-height: 540px; overflow: auto; padding-right: 4px; }
+  .module-chip {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+    display: grid;
+    gap: 3px;
+  }
+  .module-chip.active { border-color: #93c5fd; background: #eff6ff; }
+  .module-chip.locked { background: #f8fafc; color: var(--text-muted); }
+  .module-chip-title { font-weight: 700; font-size: 13px; color: var(--text); }
+  .module-chip.locked .module-chip-title { color: #64748b; }
+  .module-chip-meta { font-size: 11px; color: var(--text-muted); line-height: 1.35; }
+  .visual-canvas {
+    position: relative;
+    min-height: 430px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background:
+      linear-gradient(#eef2f7 1px, transparent 1px),
+      linear-gradient(90deg, #eef2f7 1px, transparent 1px),
+      #fbfcff;
+    background-size: 24px 24px;
+  }
+  .visual-canvas-inner { position: relative; min-width: 1160px; min-height: 430px; }
+  .visual-edges { position: absolute; inset: 0; width: 1160px; height: 430px; pointer-events: none; }
+  .visual-edge { stroke: #64748b; stroke-width: 2; fill: none; marker-end: url(#ivr-arrow); }
+  .visual-edge-label {
+    position: absolute;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    pointer-events: none;
+  }
+  .visual-node {
+    position: absolute;
+    width: 160px;
+    min-height: 72px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    padding: 10px;
+  }
+  .visual-node-type { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+  .visual-node-label { margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--text); }
+  .visual-node-subtitle { margin-top: 3px; font-size: 11px; color: var(--text-muted); line-height: 1.35; overflow-wrap: anywhere; }
+  .visual-node.incomingCall { border-color: #94a3b8; }
+  .visual-node.play { border-color: #38bdf8; }
+  .visual-node.menu { border-color: #f59e0b; }
+  .visual-node.skillTransfer, .visual-node.campaignTransfer { border-color: #22c55e; }
+  .visual-node.hangup { border-color: #ef4444; }
+  .visual-status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .menu-options-list { display: grid; gap: 10px; }
+  .menu-option-row { display: grid; grid-template-columns: 54px 1fr 120px 1fr 36px; gap: 8px; align-items: end; }
+  .menu-option-row button { padding: 8px 0; }
+
+  .vcc-editor {
+    border: 1px solid #9ca3af;
+    background: #d8dde6;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  }
+  .vcc-menu-bar {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 10px;
+    background: #f3f4f6;
+    border-bottom: 1px solid #aeb4bf;
+    color: #111827;
+    font-size: 12px;
+  }
+  .vcc-toolbar {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    background: linear-gradient(#f9fafb, #d7dce5);
+    border-bottom: 1px solid #aeb4bf;
+    flex-wrap: wrap;
+  }
+  .vcc-tool-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #9ca3af;
+    border-radius: 3px;
+    background: #f8fafc;
+    color: #1f2937;
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .vcc-tool-btn:hover:not(:disabled) { background: #e0e7ff; }
+  .vcc-workspace {
+    display: grid;
+    grid-template-columns: 245px minmax(560px, 1fr) 300px;
+    min-height: 620px;
+  }
+  .vcc-left, .vcc-right {
+    background: #eef1f6;
+    border-right: 1px solid #aeb4bf;
+    overflow: hidden;
+  }
+  .vcc-right { border-right: none; border-left: 1px solid #aeb4bf; }
+  .vcc-pane-title {
+    background: #d1d5db;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 9px;
+    border-bottom: 1px solid #aeb4bf;
+  }
+  .vcc-palette-search { padding: 8px; border-bottom: 1px solid #cbd5e1; }
+  .vcc-module-list { max-height: 558px; overflow: auto; padding: 7px; display: grid; gap: 5px; }
+  .vcc-module-group {
+    margin-top: 8px;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+  .vcc-module-item {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 7px;
+    align-items: center;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .vcc-module-item:hover { border-color: #64748b; background: #f8fafc; }
+  .vcc-module-item.locked { background: #f1f5f9; color: #64748b; }
+  .vcc-module-icon {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #94a3b8;
+    border-radius: 3px;
+    display: grid;
+    place-items: center;
+    background: #eef2ff;
+    font-size: 13px;
+  }
+  .vcc-module-name { font-size: 12px; font-weight: 700; color: #111827; }
+  .vcc-module-meta { font-size: 10px; color: #64748b; }
+  .vcc-stage {
+    background: #cdd3dd;
+    display: grid;
+    grid-template-rows: minmax(430px, 1fr) 150px;
+  }
+  .vcc-canvas-zone {
+    position: relative;
+    overflow: auto;
+    background: #f8fafc;
+    border-bottom: 1px solid #aeb4bf;
+  }
+  .vcc-zone-label {
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 3;
+    display: inline-block;
+    background: #e5e7eb;
+    border-right: 1px solid #aeb4bf;
+    border-bottom: 1px solid #aeb4bf;
+    padding: 5px 9px;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .vcc-canvas-inner { position: relative; min-width: 1180px; min-height: 510px; }
+  .vcc-onhangup-inner { position: relative; min-width: 1180px; min-height: 145px; }
+  .vcc-edges { position: absolute; inset: 0; width: 1180px; height: 510px; pointer-events: none; z-index: 1; }
+  .vcc-edge { stroke: #111827; stroke-width: 1.6; fill: none; marker-end: url(#vcc-arrow); }
+  .vcc-edge-label {
+    position: absolute;
+    z-index: 4;
+    padding: 1px 5px;
+    background: #fff;
+    border: 1px solid #94a3b8;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #111827;
+  }
+  .vcc-node {
+    position: absolute;
+    z-index: 2;
+    width: 116px;
+    min-height: 70px;
+    border: 1px solid #111827;
+    background: #ffffff;
+    border-radius: 2px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 1px 2px 3px rgba(15, 23, 42, .25);
+  }
+  .vcc-node.selected { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .vcc-node.connect-source { outline: 3px solid #f59e0b; outline-offset: 2px; }
+  .vcc-node.unsupported { border-color: #b91c1c; background: #fff7ed; }
+  .vcc-node-icon {
+    width: 34px;
+    height: 34px;
+    margin: 7px auto 3px;
+    border: 2px solid #475569;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    background: #e0f2fe;
+    font-size: 16px;
+  }
+  .vcc-node-name { font-size: 11px; font-weight: 700; color: #111827; padding: 0 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vcc-node-port {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border: 1px solid #111827;
+    background: #fff;
+  }
+  .vcc-port-in { left: -5px; top: 32px; }
+  .vcc-port-out { right: -5px; top: 32px; }
+  .vcc-inspector { padding: 10px; display: grid; gap: 10px; max-height: 588px; overflow: auto; }
+  .vcc-inspector-section { background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; display: grid; gap: 9px; }
+  .vcc-inspector-section h3 { font-size: 13px; margin: 0; color: #111827; }
+  .vcc-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 10px;
+    background: #eef1f6;
+    border-top: 1px solid #aeb4bf;
+    color: #334155;
+    font-size: 12px;
+  }
+  .vcc-bottom-tabs { display: flex; gap: 0; background: #d1d5db; border-top: 1px solid #aeb4bf; }
+  .vcc-bottom-tab {
+    border-radius: 0;
+    border-right: 1px solid #aeb4bf;
+    background: #e5e7eb;
+    color: #334155;
+    padding: 8px 14px;
+  }
+  .vcc-bottom-tab.active { background: #fff; color: #111827; }
+  .vcc-bottom-panel { display: none; background: #fff; border: 1px solid #aeb4bf; border-top: none; padding: 12px; }
+  .vcc-bottom-panel.active { display: block; }
+
+  @media (max-width: 1080px) {
+    .ivr-builder-grid { grid-template-columns: 1fr; }
+    .menu-option-row { grid-template-columns: 1fr 1fr; }
+    .vcc-workspace { grid-template-columns: 1fr; }
+    .vcc-stage { min-height: 640px; }
+  }
 
   /* Mode tabs */
   .mode-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; width: fit-content; }
@@ -403,6 +697,83 @@ const TREE = [
     icon: "&#128222;",
     children: [
       {
+        id: "five9.agentic_builder",
+        label: "Agentic Builder",
+        icon: "&#129302;",
+        children: [
+          {
+            id: "five9.playbook_agent",
+            label: "Playbook Agent",
+            icon: "&#128218;",
+            tool: true,
+          }
+        ]
+      },
+      {
+        id: "five9.read_preflight",
+        label: "Read / Preflight",
+        icon: "&#128269;",
+        children: [
+          {
+            id: "five9.config_preflight",
+            label: "Configuration Preflight",
+            icon: "&#128221;",
+            tool: true,
+          }
+        ]
+      },
+      {
+        id: "five9.core_config",
+        label: "Core Config",
+        icon: "&#9881;",
+        children: [
+          {
+            id: "five9.core_writes",
+            label: "Core Config Writes",
+            icon: "&#9998;",
+            tool: true,
+          }
+        ]
+      },
+      {
+        id: "five9.ivr",
+        label: "IVR Scripts",
+        icon: "&#128257;",
+        children: [
+          {
+            id: "five9.ivr_scripts",
+            label: "IVR Script Management",
+            icon: "&#128221;",
+            tool: true,
+          },
+          {
+            id: "five9.ivr_builder",
+            label: "Script Builder",
+            icon: "&#129521;",
+            tool: true,
+          }
+        ]
+      },
+      {
+        id: "five9.rollback",
+        label: "Modify / Delete / Rollback",
+        icon: "&#8634;",
+        children: [
+          {
+            id: "five9.modify_config",
+            label: "Modify Config",
+            icon: "&#128295;",
+            tool: true,
+          },
+          {
+            id: "five9.rollback_deletes",
+            label: "Rollback Deletes",
+            icon: "&#128465;",
+            tool: true,
+          }
+        ]
+      },
+      {
         id: "five9.prompt_management",
         label: "Prompt Management",
         icon: "&#128266;",
@@ -423,6 +794,19 @@ const TREE = [
 // Tool form definitions
 // ---------------------------------------------------------------------------
 const TOOLS = {
+  "five9.playbook_agent": {
+    platform: "Five9",
+    category: "Agentic Builder",
+    name: "Playbook Agent",
+    description: "Upload a Five9 implementation playbook, run AI interpretation with deterministic fallback, and generate an approval-gated downstream configuration plan.",
+    endpoint: "/api/agent/playbook/upload-analyze",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderPlaybookAgentForm,
+    collect: collectPlaybookAgentForm,
+    renderResults: renderPlaybookAgentResults,
+    buttonLabel: "Upload & Analyze",
+    wide: true,
+  },
   "five9.prompt_bulk_upload": {
     platform: "Five9",
     category: "Prompt Management",
@@ -432,16 +816,88 @@ const TOOLS = {
     credentialsEndpoint: "/api/credentials/five9",
     render: renderPromptBulkUploadForm,
     collect: collectPromptBulkUploadForm,
+    buttonLabel: "Run Upload",
+  },
+  "five9.config_preflight": {
+    platform: "Five9",
+    category: "Read / Preflight",
+    name: "Configuration Preflight",
+    description: "Read current Five9 skills, dispositions, prompts, campaigns, and DNIS before planning changes.",
+    endpoint: "/api/run/five9/preflight",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9PreflightForm,
+    collect: collectFive9PreflightForm,
+    renderResults: renderPreflightResults,
+    buttonLabel: "Run Preflight",
+  },
+  "five9.core_writes": {
+    platform: "Five9",
+    category: "Core Config",
+    name: "Core Config Writes",
+    description: "Approval-gated Five9 create and assignment operations for skills, dispositions, prompts, campaigns, DNIS, and default IVR schedule.",
+    endpoint: "/api/run/five9/core-writes",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9CoreWritesForm,
+    collect: collectFive9CoreWritesForm,
+    renderResults: renderCoreWriteResults,
+    buttonLabel: "Run Core Writes",
+  },
+  "five9.ivr_scripts": {
+    platform: "Five9",
+    category: "IVR Scripts",
+    name: "IVR Script Management",
+    description: "Read IVR script XML definitions and approval-gate raw xmlDefinition create, modify, or delete operations.",
+    endpoint: "/api/run/five9/ivr-scripts",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9IvrScriptsForm,
+    collect: collectFive9IvrScriptsForm,
+    renderResults: renderIvrScriptResults,
+    buttonLabel: "Run IVR Scripts",
+  },
+  "five9.ivr_builder": {
+    platform: "Five9",
+    category: "IVR Scripts",
+    name: "Script Builder",
+    description: "AI-usable IVR build kit that validates a normalized build plan, compiles Five9 XML, and approval-gates deployment.",
+    endpoint: "/api/run/five9/ivr-builder/compile",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9IvrBuilderForm,
+    wide: true,
+  },
+  "five9.modify_config": {
+    platform: "Five9",
+    category: "Modify / Delete / Rollback",
+    name: "Modify Config",
+    description: "Approval-gated Five9 modify operations for existing skills, dispositions, TTS prompts, and inbound campaigns.",
+    endpoint: "/api/run/five9/modify",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9ModifyForm,
+    collect: collectFive9ModifyForm,
+    renderResults: renderModifyResults,
+    buttonLabel: "Run Modify",
+  },
+  "five9.rollback_deletes": {
+    platform: "Five9",
+    category: "Modify / Delete / Rollback",
+    name: "Rollback Deletes",
+    description: "Approval-gated Five9 delete and remove operations for undoing disposable test configuration.",
+    endpoint: "/api/run/five9/rollback",
+    credentialsEndpoint: "/api/credentials/five9",
+    render: renderFive9RollbackForm,
+    collect: collectFive9RollbackForm,
+    renderResults: renderRollbackResults,
+    buttonLabel: "Run Rollback",
   }
 };
 
 // ---------------------------------------------------------------------------
 // Sidebar tree rendering
 // ---------------------------------------------------------------------------
-function renderTree(nodes, container) {
+function renderTree(nodes, container, depth = 0) {
   nodes.forEach(node => {
     const el = document.createElement("div");
     el.className = "tree-node";
+    el.style.setProperty("--tree-level", depth);
 
     if (node.tool) {
       el.innerHTML = `
@@ -467,7 +923,7 @@ function renderTree(nodes, container) {
       });
 
       if (node.children) {
-        renderTree(node.children, el.querySelector(".tree-node-children"));
+        renderTree(node.children, el.querySelector(".tree-node-children"), depth + 1);
       }
     }
 
@@ -493,6 +949,7 @@ function selectTool(toolId) {
 
   const tool = TOOLS[toolId];
   if (!tool) return;
+  panel.classList.toggle("wide", Boolean(tool.wide));
 
   panel.innerHTML = `
     <div class="tool-header">
@@ -509,6 +966,469 @@ function selectTool(toolId) {
 // ---------------------------------------------------------------------------
 // Prompt Bulk Upload — form
 // ---------------------------------------------------------------------------
+function renderPlaybookAgentForm(container, tool) {
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-title">Agent Workflow</div>
+      <div class="alert success">Upload -> AI Interpretation -> Preflight Plan -> Comparison -> Proposed Writes -> Approval -> Execution Log</div>
+      <div class="summary-pills">
+        <span class="pill total">Claude when API key exists</span>
+        <span class="pill skipped">Fallback when offline</span>
+        <span class="pill failed">No direct AI execution</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Playbook Upload</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="field">
+            <label>AI Provider</label>
+            <select id="pb-ai-provider" onchange="updatePlaybookModelPlaceholder()">
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="openai">OpenAI / ChatGPT</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+            <span class="hint">The AI interprets the playbook only. Backend validation still builds the Five9 tool plan.</span>
+          </div>
+          <div class="field">
+            <label>Model</label>
+            <select id="pb-model" onchange="updatePlaybookCustomModelField()"></select>
+            <input type="text" id="pb-model-custom" placeholder="Enter custom model id" style="display:none; margin-top:8px">
+            <span class="hint">Use Backend default unless you need a specific provider model.</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>API Key</label>
+          <input type="password" id="pb-api-key" autocomplete="new-password" placeholder="Optional; falls back if blank">
+          <span class="hint">Sent only with this analyze request. It is not stored in the app.</span>
+        </div>
+        <div class="field">
+          <label class="checkbox-row">
+            <input type="checkbox" id="pb-ai-required" checked>
+            <span>Require AI success</span>
+          </label>
+          <span class="hint">When checked, provider errors stop the run instead of showing deterministic fallback output.</span>
+        </div>
+        <div class="field">
+          <label>Preflight Source</label>
+          <select id="pb-preflight-mode" onchange="setPlaybookPreflightMode(this.value)">
+            <option value="stub">Stub inventory</option>
+            <option value="live">Live Five9 Preflight</option>
+          </select>
+          <span class="hint">Live preflight reads your Five9 tenant before the agent filters proposed writes.</span>
+        </div>
+        <div class="card" id="pb-preflight-live-card" style="display:none">
+          <div class="cred-header">
+            <div class="card-title" style="margin:0">Live Five9 Preflight Credentials</div>
+            <button type="button" class="btn-link" id="pb-preflight-load-creds-btn">Load from .env</button>
+          </div>
+          <div class="alert warning">Live preflight performs read-only Five9 Configuration Web Services calls. It does not create, modify, or delete configuration.</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Domain</label>
+              <select id="pb-preflight-domain">
+                <option value="api.five9.com">api.five9.com (US)</option>
+                <option value="api.five9.eu">api.five9.eu (EU)</option>
+                <option value="api.five9.ca">api.five9.ca (CA)</option>
+                <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Username</label>
+                <input type="text" id="pb-preflight-username" placeholder="user@domain.com" autocomplete="username">
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" id="pb-preflight-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+              </div>
+            </div>
+            <label class="checkbox-row">
+              <input type="checkbox" id="pb-preflight-approved">
+              <span>I approve these live read-only Five9 preflight calls.</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Five9 implementation playbook (.xlsx)</label>
+          <input type="file" id="pb-file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <span class="hint">The agent reads workbook tabs such as Skill, Dispositions, Inbound, Prompts, DID.Tracker, and Number Inventory.</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.playbook_agent')">
+          Upload & Analyze
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Agent Scope</div>
+      <div class="alert warning">This is a real planning and execution surface. Stub preflight uses sample inventory; Live Five9 Preflight reads the tenant before proposing writes. IVR XML generation remains separate.</div>
+      <div class="summary-pills">
+        <span class="pill total">Input: playbook</span>
+        <span class="pill skipped">Output: AI proposed Five9 operations</span>
+        <span class="pill skipped">Output: preflight plan</span>
+        <span class="pill skipped">Output: comparison</span>
+        <span class="pill skipped">Output: proposed writes</span>
+      </div>
+      <span class="hint" style="display:none">Legacy local path endpoint: /api/agent/playbook/analyze</span>
+    </div>
+  `;
+  document.getElementById("pb-preflight-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "pb-preflight");
+  });
+  setPlaybookPreflightMode("stub");
+  updatePlaybookModelPlaceholder();
+}
+
+function collectPlaybookAgentForm() {
+  const fileInput = document.getElementById("pb-file");
+  const modelSelect = document.getElementById("pb-model");
+  const selectedModel = modelSelect.value === "__custom__"
+    ? document.getElementById("pb-model-custom").value.trim()
+    : modelSelect.value;
+  const payload = new FormData();
+  if (fileInput.files[0]) payload.append("file", fileInput.files[0]);
+  payload.append("ai_provider", document.getElementById("pb-ai-provider").value);
+  payload.append("api_key", document.getElementById("pb-api-key").value);
+  payload.append("model", selectedModel);
+  payload.append("ai_required", document.getElementById("pb-ai-required").checked ? "true" : "false");
+  payload.append("preflight_mode", document.getElementById("pb-preflight-mode").value);
+  payload.append("preflight_approved", document.getElementById("pb-preflight-approved").checked ? "true" : "false");
+  payload.append("preflight_domain", document.getElementById("pb-preflight-domain").value);
+  payload.append("preflight_username", document.getElementById("pb-preflight-username").value.trim());
+  payload.append("preflight_password", document.getElementById("pb-preflight-password").value);
+  return payload;
+}
+
+let latestPlaybookAgentPlan = null;
+let playbookAgentMode = "dry_run";
+
+function setPlaybookPreflightMode(mode) {
+  const liveCard = document.getElementById("pb-preflight-live-card");
+  if (!liveCard) return;
+  liveCard.style.display = mode === "live" ? "block" : "none";
+  if (mode !== "live") {
+    const approved = document.getElementById("pb-preflight-approved");
+    if (approved) approved.checked = false;
+  }
+}
+
+function updatePlaybookModelPlaceholder() {
+  const provider = document.getElementById("pb-ai-provider").value;
+  const modelSelect = document.getElementById("pb-model");
+  if (!modelSelect) return;
+  const modelOptions = {
+    anthropic: [
+      ["", "Backend default (claude-sonnet-4-20250514)"],
+      ["claude-sonnet-4-20250514", "Claude Sonnet 4"],
+      ["claude-opus-4-1-20250805", "Claude Opus 4.1"],
+      ["claude-haiku-4-5-20251001", "Claude Haiku 4.5"],
+      ["__custom__", "Custom Anthropic model..."],
+    ],
+    openai: [
+      ["", "Backend default (gpt-5.2)"],
+      ["gpt-5.2", "GPT-5.2"],
+      ["gpt-5.1", "GPT-5.1"],
+      ["gpt-4.1", "GPT-4.1"],
+      ["__custom__", "Custom OpenAI model..."],
+    ],
+    gemini: [
+      ["", "Backend default (gemini-2.5-pro)"],
+      ["gemini-2.5-pro", "Gemini 2.5 Pro"],
+      ["gemini-2.5-flash", "Gemini 2.5 Flash"],
+      ["gemini-2.0-flash", "Gemini 2.0 Flash"],
+      ["__custom__", "Custom Gemini model..."],
+    ],
+  };
+  modelSelect.innerHTML = (modelOptions[provider] || [["", "Backend default"]])
+    .map(([value, label]) => `<option value="${escHtml(value)}">${escHtml(label)}</option>`)
+    .join("");
+  updatePlaybookCustomModelField();
+}
+
+function updatePlaybookCustomModelField() {
+  const modelSelect = document.getElementById("pb-model");
+  const customInput = document.getElementById("pb-model-custom");
+  if (!modelSelect || !customInput) return;
+  const customSelected = modelSelect.value === "__custom__";
+  customInput.style.display = customSelected ? "block" : "none";
+  if (!customSelected) customInput.value = "";
+}
+
+function renderPlaybookAgentResults(container, data) {
+  latestPlaybookAgentPlan = data;
+  const summary = data.summary || {};
+  const requirements = data.requirements || {};
+  const aiPlannedCalls = data.ai_planned_calls || data.planned_calls || [];
+  const agentPlan = data.agent_plan || {};
+  const ivrRequirements = data.ivr_requirements || agentPlan.ivr_requirements || {};
+  const ivrPreflightPlan = data.ivr_preflight_plan || [];
+  const comparison = data.comparison || {};
+  const reviewItems = data.review_items || [];
+  const usedFallback = data.ai_mode === "fallback";
+  const preflightResults = data.preflight_results || [];
+  const requirementHtml = Object.entries(requirements).map(([group, items]) => `
+    <div class="card">
+      <div class="card-title">${escHtml(group)}</div>
+      <ul style="padding-left:18px; display:grid; gap:5px">
+        ${(items || []).map(item => `<li>${escHtml(item)}</li>`).join("")}
+      </ul>
+    </div>
+  `).join("");
+  const preflightRows = (data.preflight_plan || []).map(call => `
+    <tr>
+      <td><span class="tool-name">${escHtml(call.tool_name)}</span></td>
+      <td><pre class="preflight-data">${escHtml(JSON.stringify(call.params, null, 2))}</pre></td>
+    </tr>
+  `).join("");
+  const preflightResultRows = preflightResults.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.mode === "live" ? "created" : "dry-run"}">${escHtml(result.mode)}</span></td>
+      <td>${Array.isArray(result.data) ? result.data.length : 0}</td>
+    </tr>
+  `).join("");
+  const actionRows = (data.write_actions || []).slice(0, 80).map(action => `
+    <tr>
+      <td>${escHtml(action.object_type)}</td>
+      <td>${escHtml(action.name)}</td>
+      <td><span class="action-badge ${action.action === "create" ? "dry-run" : action.action === "skip" ? "created" : "failed"}">${escHtml(action.action)}</span></td>
+      <td>${escHtml(action.reason || "")}</td>
+    </tr>
+  `).join("");
+  const writeRows = (data.proposed_write_plan || data.core_write_plan || []).map(call => `
+    <tr>
+      <td><span class="tool-name">${escHtml(call.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext({ params: call.params }))}</td>
+      <td><pre class="preflight-data">${escHtml(JSON.stringify(call.params, null, 2))}</pre></td>
+    </tr>
+  `).join("");
+  const aiCallRows = aiPlannedCalls.map(call => `
+    <tr>
+      <td><span class="tool-name">${escHtml(call.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext({ params: call.params }))}</td>
+      <td><pre class="preflight-data">${escHtml(JSON.stringify(call.params, null, 2))}</pre></td>
+    </tr>
+  `).join("");
+  const ivrMenuRows = (ivrRequirements.menu_options || []).map(option => `
+    <tr>
+      <td>${escHtml(option.digit || "")}</td>
+      <td>${escHtml(option.label || "")}</td>
+      <td>${escHtml(option.target || "")}</td>
+    </tr>
+  `).join("");
+  const ivrPreflightRows = ivrPreflightPlan.map(call => `
+    <tr>
+      <td><span class="tool-name">${escHtml(call.tool_name)}</span></td>
+      <td><pre class="preflight-data">${escHtml(JSON.stringify(call.params, null, 2))}</pre></td>
+    </tr>
+  `).join("");
+  const ivrScriptRows = (data.proposed_ivr_script_plan || []).map(call => `
+    <tr>
+      <td><span class="tool-name">${escHtml(call.tool_name)}</span></td>
+      <td><pre class="preflight-data">${escHtml(JSON.stringify(call.params, null, 2))}</pre></td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Agent Output</div>
+      <div class="alert ${usedFallback ? "warning" : "success"}">
+        ${usedFallback
+          ? "Fallback was used. The selected AI provider did not produce valid Five9 operation inputs; deterministic parser output is shown for review."
+          : "AI interpretation succeeded. The backend validated the Five9 operation inputs and execution is waiting for approval."}
+      </div>
+      <div class="summary-pills">
+        <span class="pill total">${escHtml(data.source?.file_name || "playbook")}</span>
+        <span class="pill ${data.ai_mode === "claude" ? "created" : "skipped"}">AI mode: ${escHtml(data.ai_mode || "unknown")}</span>
+        <span class="pill ${data.preflight_live ? "created" : "skipped"}">Preflight: ${escHtml(data.preflight_mode || "stub")}</span>
+        ${data.model ? `<span class="pill total">${escHtml(data.model)}</span>` : ""}
+        <span class="pill skipped">${summary.skills || 0} skills</span>
+        <span class="pill skipped">${summary.dispositions || 0} dispositions</span>
+        <span class="pill skipped">${summary.inbound_campaigns || 0} inbound campaigns</span>
+        <span class="pill skipped">${summary.dnis || 0} DNIS</span>
+        <span class="pill total">${summary.ai_planned_calls || aiPlannedCalls.length || 0} AI planned calls</span>
+        <span class="pill total">${summary.proposed_write_calls || summary.core_write_calls || 0} proposed writes</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AI Proposed Five9 Operations</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Target</th><th>Params</th></tr></thead>
+        <tbody>${aiCallRows}</tbody>
+      </table>
+      <div class="card-title" style="margin-top:16px">Agent Plan Metadata</div>
+      <pre class="preflight-data">${escHtml(JSON.stringify({
+        client_name: agentPlan.client_name,
+        deferred_items: agentPlan.deferred_items || data.deferred_items || [],
+        rationale: agentPlan.rationale || "",
+      }, null, 2))}</pre>
+    </div>
+
+    ${reviewItems.length ? `
+      <div class="card">
+        <div class="card-title">Review Items</div>
+        ${reviewItems.map(item => `<div class="alert warning">${escHtml(item.message || item)}</div>`).join("")}
+      </div>
+    ` : ""}
+
+    <div class="card">
+      <div class="card-title">IVR Requirements / Deferred Script Work</div>
+      <div class="alert warning">No IVR XML will be generated or uploaded in this agent slice. The agent may create the empty IVR script shell with approval.</div>
+      <div class="summary-pills">
+        <span class="pill total">Script: ${escHtml(ivrRequirements.script_name || "not identified")}</span>
+        <span class="pill skipped">${(ivrRequirements.greetings || []).length} greetings</span>
+        <span class="pill skipped">${(ivrRequirements.menu_options || []).length} menu options</span>
+        <span class="pill skipped">${(ivrRequirements.routing_targets || []).length} routing targets</span>
+      </div>
+      <pre class="preflight-data">${escHtml(JSON.stringify({
+        intent: ivrRequirements.intent || "",
+        business_hours: ivrRequirements.business_hours || "",
+        greetings: ivrRequirements.greetings || [],
+        routing_targets: ivrRequirements.routing_targets || [],
+        notes: ivrRequirements.notes || [],
+      }, null, 2))}</pre>
+      <table>
+        <thead><tr><th>Digit</th><th>Label</th><th>Target</th></tr></thead>
+        <tbody>${ivrMenuRows || `<tr><td colspan="3">No menu options extracted yet.</td></tr>`}</tbody>
+      </table>
+      <div class="card-title" style="margin-top:16px">Read-Only IVR Lookup Plan</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Params</th></tr></thead>
+        <tbody>${ivrPreflightRows || `<tr><td colspan="2">No IVR script lookup planned.</td></tr>`}</tbody>
+      </table>
+      <div class="card-title" style="margin-top:16px">IVR Script Shell Create Plan</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Params</th></tr></thead>
+        <tbody>${ivrScriptRows || `<tr><td colspan="2">No IVR script shell create planned.</td></tr>`}</tbody>
+      </table>
+    </div>
+
+    <div class="preflight-grid">
+      ${requirementHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Planned Preflight Reads</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Params</th></tr></thead>
+        <tbody>${preflightRows}</tbody>
+      </table>
+      <div class="card-title" style="margin-top:16px">Preflight Results Used For Comparison</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Target</th><th>Mode</th><th>Objects</th></tr></thead>
+        <tbody>${preflightResultRows || `<tr><td colspan="4">No preflight results returned.</td></tr>`}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Preflight Comparison</div>
+      <div class="summary-pills">
+        <span class="pill created">${Object.values(comparison.exists || {}).flat().length} exists</span>
+        <span class="pill skipped">${Object.values(comparison.missing || {}).flat().length} missing</span>
+        <span class="pill failed">${Object.values(comparison.conflicts || {}).flat().length} conflicts</span>
+      </div>
+      <table>
+        <thead><tr><th>Type</th><th>Name</th><th>Decision</th><th>Reason</th></tr></thead>
+        <tbody>${actionRows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Proposed Five9 Writes</div>
+      <table>
+        <thead><tr><th>Tool</th><th>Target</th><th>Params</th></tr></thead>
+        <tbody>${writeRows}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Approval & Execution</div>
+      <div class="alert warning">The AI cannot execute tools directly. Only the exact backend-generated plan can run, and live mode requires credentials plus explicit approval.</div>
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="pa-tab-dry" onclick="setPlaybookAgentMode('dry_run')">Dry Run Execute</button>
+        <button type="button" class="mode-tab" id="pa-tab-live" onclick="setPlaybookAgentMode('live')">Live Five9 Execute</button>
+      </div>
+      <div class="card" id="pa-live-card" style="display:none">
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="field">
+              <label>Domain</label>
+              <select id="pa-domain">
+                <option value="api.five9.com">api.five9.com (US)</option>
+                <option value="api.five9.eu">api.five9.eu (EU)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="pa-username" autocomplete="off">
+            </div>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="pa-password" autocomplete="new-password">
+          </div>
+        </div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0">
+        <input type="checkbox" id="pa-approved">
+        <span>I approve running this exact generated plan in the selected mode.</span>
+      </label>
+      <div class="actions">
+        <button type="button" class="btn-primary" onclick="runPlaybookAgentExecution()">Approve & Execute Agent Plan</button>
+      </div>
+    </div>
+
+    <div id="pa-execution-results"></div>
+  `;
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setPlaybookAgentMode(mode) {
+  playbookAgentMode = mode;
+  document.getElementById("pa-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("pa-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("pa-live-card").style.display = mode === "live" ? "block" : "none";
+}
+
+async function runPlaybookAgentExecution() {
+  const target = document.getElementById("pa-execution-results");
+  if (!latestPlaybookAgentPlan) {
+    target.innerHTML = `<div class="alert error">No generated plan is available.</div>`;
+    return;
+  }
+  const payload = {
+    approved: document.getElementById("pa-approved").checked,
+    mode: playbookAgentMode,
+    plan_id: latestPlaybookAgentPlan.plan_id,
+    planned_calls: latestPlaybookAgentPlan.proposed_write_plan || [],
+    domain: document.getElementById("pa-domain")?.value || "api.five9.com",
+    username: document.getElementById("pa-username")?.value || "",
+    password: document.getElementById("pa-password")?.value || "",
+  };
+  target.innerHTML = `<div class="alert warning">Executing approved plan...</div>`;
+  try {
+    const res = await fetch("/api/agent/playbook/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const execData = await readApiResponse(res);
+    if (!res.ok) {
+      target.innerHTML = `<div class="alert error">Error: ${escHtml(execData.detail || res.statusText)}</div>`;
+      return;
+    }
+    renderCoreWriteResults(target, execData);
+  } catch (e) {
+    target.innerHTML = `<div class="alert error">Network error: ${escHtml(e.message)}</div>`;
+  }
+}
+
 function renderPromptBulkUploadForm(container, tool) {
   container.innerHTML = `
     <form id="bulk-upload-form" onsubmit="return false">
@@ -655,19 +1575,2471 @@ function collectPromptBulkUploadForm() {
 }
 
 // ---------------------------------------------------------------------------
+// Five9 Configuration Preflight - form
+// ---------------------------------------------------------------------------
+let preflightMode = "stub";
+
+function renderFive9PreflightForm(container, tool) {
+  container.innerHTML = `
+    <form id="preflight-form" onsubmit="return false">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="pf-tab-stub" onclick="setPreflightMode('stub')">Stub / Offline</button>
+        <button type="button" class="mode-tab" id="pf-tab-live" onclick="setPreflightMode('live')">Live Five9 Read</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Read Pack</div>
+        <div class="preflight-grid">
+          <label class="checkbox-row"><input type="checkbox" id="pf-skills" checked><span>Skills</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="pf-dispositions" checked><span>Dispositions</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="pf-prompts" checked><span>Prompts</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="pf-campaigns" checked><span>Campaigns</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="pf-dnis" checked><span>DNIS list</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="pf-campaign-dnis" checked><span>Campaign DNIS</span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Filters</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="field">
+              <label>Skill name pattern</label>
+              <input type="text" id="pf-skill-pattern" placeholder=".*">
+            </div>
+            <div class="field">
+              <label>Disposition name pattern</label>
+              <input type="text" id="pf-disposition-pattern" placeholder=".*">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Prompt name pattern</label>
+              <input type="text" id="pf-prompt-pattern" placeholder=".*">
+            </div>
+            <div class="field">
+              <label>Campaign name pattern</label>
+              <input type="text" id="pf-campaign-pattern" placeholder=".*">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Campaign type</label>
+              <select id="pf-campaign-type">
+                <option value="inbound">inbound</option>
+                <option value="outbound">outbound</option>
+                <option value="autodial">autodial</option>
+                <option value="">all campaign types</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Campaign DNIS filter</label>
+              <input type="text" id="pf-campaign-dnis-name" placeholder="Leave empty for all campaigns">
+              <span class="hint">Optional. Enter one exact campaign name to narrow the Campaign DNIS read.</span>
+            </div>
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="pf-unassigned-dnis">
+            <span>Only return unassigned DNIS in the domain DNIS read</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card" id="pf-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="pf-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="alert warning">Live mode performs read-only Five9 Configuration Web Services calls. It does not create, modify, or delete configuration.</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="pf-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="pf-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="pf-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="pf-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="pf-approved">
+          <span>I approve these live read-only Five9 preflight calls.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.config_preflight')">
+          Run Preflight
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("pf-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "pf");
+  });
+  setPreflightMode("stub");
+}
+
+function setPreflightMode(mode) {
+  preflightMode = mode;
+  document.getElementById("pf-tab-stub").classList.toggle("active", mode === "stub");
+  document.getElementById("pf-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("pf-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("pf-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "stub") {
+    document.getElementById("pf-approved").checked = false;
+  }
+  clearResults();
+}
+
+function collectFive9PreflightForm() {
+  return {
+    mode: preflightMode,
+    approved: document.getElementById("pf-approved").checked,
+    domain: document.getElementById("pf-domain").value,
+    username: document.getElementById("pf-username").value.trim(),
+    password: document.getElementById("pf-password").value,
+    include_skills: document.getElementById("pf-skills").checked,
+    include_dispositions: document.getElementById("pf-dispositions").checked,
+    include_prompts: document.getElementById("pf-prompts").checked,
+    include_campaigns: document.getElementById("pf-campaigns").checked,
+    include_dnis: document.getElementById("pf-dnis").checked,
+    include_campaign_dnis: document.getElementById("pf-campaign-dnis").checked,
+    skill_name_pattern: document.getElementById("pf-skill-pattern").value.trim() || null,
+    disposition_name_pattern: document.getElementById("pf-disposition-pattern").value.trim() || null,
+    prompt_name_pattern: document.getElementById("pf-prompt-pattern").value.trim() || null,
+    campaign_name_pattern: document.getElementById("pf-campaign-pattern").value.trim() || null,
+    campaign_type: document.getElementById("pf-campaign-type").value || null,
+    select_unassigned_dnis: document.getElementById("pf-unassigned-dnis").checked,
+    campaign_dnis_name: document.getElementById("pf-campaign-dnis-name").value.trim() || null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Five9 Core Config Writes - form
+// ---------------------------------------------------------------------------
+let coreWriteMode = "dry_run";
+
+const SAMPLE_CORE_WRITE_PLAN = [
+  { tool_name: "five9_create_skill", params: { name: "English", description: "Language skill for English-speaking callers" } },
+  { tool_name: "five9_create_disposition", params: { name: "Sale Completed" } },
+  { tool_name: "five9_add_prompt_tts", params: { prompt_name: "Main Greeting", text: "Thank you for calling." } },
+  { tool_name: "five9_create_inbound_campaign", params: { campaign_name: "Acme Main Inbound", description: "Main inbound campaign" } },
+  { tool_name: "five9_add_dnis_to_campaign", params: { campaign_name: "Acme Main Inbound", dnis: ["800-555-0100"] } },
+  { tool_name: "five9_add_skills_to_campaign", params: { campaign_name: "Acme Main Inbound", skills: ["English"] } },
+  { tool_name: "five9_add_dispositions_to_campaign", params: { campaign_name: "Acme Main Inbound", dispositions: ["Sale Completed"] } },
+  { tool_name: "five9_set_default_ivr_schedule", params: { campaign_name: "Acme Main Inbound", script_name: "Main IVR" } }
+];
+
+function renderFive9CoreWritesForm(container, tool) {
+  container.innerHTML = `
+    <form id="core-writes-form" onsubmit="return false">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="cw-tab-dry" onclick="setCoreWriteMode('dry_run')">Dry Run Plan</button>
+        <button type="button" class="mode-tab" id="cw-tab-live" onclick="setCoreWriteMode('live')">Live Five9 Write</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Planned Write Calls</div>
+        <div class="alert warning">Live mode creates or changes Five9 configuration. Run preflight first, review this plan, then approve explicitly.</div>
+        <div class="field">
+          <label>Approved Five9 core-write plan JSON</label>
+          <textarea id="cw-plan" rows="18">${escHtml(JSON.stringify(SAMPLE_CORE_WRITE_PLAN, null, 2))}</textarea>
+          <span class="hint">Only allowed Core Config Write Pack tool names are accepted. Unknown, missing, or malformed calls are rejected by the backend.</span>
+        </div>
+      </div>
+
+      <div class="card" id="cw-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="cw-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="cw-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="cw-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="cw-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="cw-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="cw-approved">
+          <span>I approve these live Five9 write calls exactly as shown.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.core_writes')">
+          Run Core Writes
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("cw-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "cw");
+  });
+  setCoreWriteMode("dry_run");
+}
+
+function setCoreWriteMode(mode) {
+  coreWriteMode = mode;
+  document.getElementById("cw-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("cw-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("cw-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("cw-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "dry_run") {
+    document.getElementById("cw-approved").checked = false;
+  }
+  clearResults();
+}
+
+function collectFive9CoreWritesForm() {
+  let plannedCalls;
+  try {
+    plannedCalls = JSON.parse(document.getElementById("cw-plan").value);
+  } catch (e) {
+    plannedCalls = [{ tool_name: "__invalid_json__", params: { error: e.message } }];
+  }
+  return {
+    mode: coreWriteMode,
+    approved: document.getElementById("cw-approved").checked,
+    domain: document.getElementById("cw-domain").value,
+    username: document.getElementById("cw-username").value.trim(),
+    password: document.getElementById("cw-password").value,
+    planned_calls: plannedCalls,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Five9 IVR Script Management - form
+// ---------------------------------------------------------------------------
+let ivrScriptMode = "dry_run";
+
+const SAMPLE_IVR_SCRIPT_PLAN = [
+  { tool_name: "five9_get_ivr_scripts", params: { name_pattern: "ZZ_TEST_Codex_IVR_Source" } },
+  {
+    tool_name: "five9_modify_ivr_script",
+    params: {
+      name: "ZZ_TEST_Codex_IVR_Source",
+      description: "Updated by Codex raw XML discovery workflow",
+      xml_definition: "<ivr-script/>"
+    }
+  }
+];
+
+function renderFive9IvrScriptsForm(container, tool) {
+  container.innerHTML = `
+    <form id="ivr-form" onsubmit="return false">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="iv-tab-dry" onclick="setIvrScriptMode('dry_run')">Dry Run Plan</button>
+        <button type="button" class="mode-tab" id="iv-tab-live" onclick="setIvrScriptMode('live')">Live Five9 IVR</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">IVR XML Discovery</div>
+        <div class="alert warning">Live discovery is read-only: use five9_get_ivr_scripts to fetch name, description, and raw xmlDefinition for inspection. Do not paste live update calls into this discovery step unless they have been separately reviewed.</div>
+        <div class="field">
+          <label>IVR script read/update plan JSON</label>
+          <textarea id="iv-plan" rows="16">${escHtml(JSON.stringify(SAMPLE_IVR_SCRIPT_PLAN, null, 2))}</textarea>
+          <span class="hint">Raw XML updates use five9_modify_ivr_script with a non-empty xml_definition. Unknown IVR tool names are rejected by the backend.</span>
+        </div>
+      </div>
+
+      <div class="card" id="iv-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="iv-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="iv-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="iv-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="iv-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="iv-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <div class="alert warning">Live IVR create, modify, and delete operations can change call-flow behavior. Read-only getIVRScripts discovery should be used before any raw XML update.</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="iv-approved">
+          <span>I approve these live Five9 IVR script calls exactly as shown.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.ivr_scripts')">
+          Run IVR Scripts
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("iv-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "iv");
+  });
+  setIvrScriptMode("dry_run");
+}
+
+function setIvrScriptMode(mode) {
+  ivrScriptMode = mode;
+  document.getElementById("iv-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("iv-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("iv-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("iv-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "dry_run") {
+    document.getElementById("iv-approved").checked = false;
+  }
+  clearResults();
+}
+
+function collectFive9IvrScriptsForm() {
+  let plannedCalls;
+  try {
+    plannedCalls = JSON.parse(document.getElementById("iv-plan").value);
+  } catch (e) {
+    plannedCalls = [{ tool_name: "__invalid_json__", params: { error: e.message } }];
+  }
+  return {
+    mode: ivrScriptMode,
+    approved: document.getElementById("iv-approved").checked,
+    domain: document.getElementById("iv-domain").value,
+    username: document.getElementById("iv-username").value.trim(),
+    password: document.getElementById("iv-password").value,
+    planned_calls: plannedCalls,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Five9 IVR Script Builder - form
+// ---------------------------------------------------------------------------
+let ivrBuilderMode = "dry_run";
+
+const SAMPLE_IVR_BUILD_PLAN = {
+  script_name: "Acme Main IVR",
+  description: "Main inbound IVR",
+  greeting: {
+    prompt_name: "Main Greeting",
+    text: "Thank you for calling Acme Health Services."
+  },
+  menu: {
+    name: "Main Menu",
+    options: [
+      { digit: "1", label: "Sales", transfer_type: "skill", target: "Sales" },
+      { digit: "2", label: "Billing", transfer_type: "skill", target: "Billing" },
+      { digit: "3", label: "Support", transfer_type: "skill", target: "Support" }
+    ],
+    no_match: "hangup",
+    no_input: "hangup"
+  }
+};
+
+const BLANK_IVR_BUILD_PLAN = {
+  script_name: "Untitled IVR Script",
+  description: "",
+  greeting: {
+    prompt_name: "Greeting",
+    text: ""
+  },
+  menu: {
+    name: "Main Menu",
+    options: [],
+    no_match: "hangup",
+    no_input: "hangup"
+  },
+  layout: {
+    incoming: { x: 40, y: 170 },
+    greeting: { x: 260, y: 170 },
+    menu: { x: 500, y: 170 },
+    hangup: { x: 1010, y: 170 }
+  }
+};
+
+function renderFive9IvrBuilderForm(container, tool) {
+  container.innerHTML = `
+    <form id="ivr-builder-form" onsubmit="return false">
+      <div class="card">
+        <div class="card-title">Workflow</div>
+        <div class="alert warning">Requirements -&gt; Build Plan -&gt; Compiler Registry -&gt; Generated XML -&gt; Approval -&gt; Five9 Update</div>
+        <span class="hint">The UI and AI use the same normalized build plan. V1 supports simple menu IVRs only; the compiler owns raw xmlDefinition generation.</span>
+      </div>
+
+      <div class="ivr-builder-grid">
+        <div class="ivr-builder-stack">
+          <div class="card">
+            <div class="card-title">Module Palette</div>
+            <div id="ib-catalog" class="module-palette">Loading IVR build kit catalog...</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Analyze Existing .five9ivr</div>
+            <div class="field">
+              <label>Local .five9ivr file</label>
+              <div class="path-row">
+                <input type="text" id="ib-file-path" placeholder="C:\\Users\\jrgoo\\Desktop\\five9-ivr-exports\\GenericTest.five9ivr">
+                <button type="button" class="btn-browse" onclick="browseFile('ib-file-path', 'five9ivr', 'Select Five9 IVR export')">Browse&hellip;</button>
+              </div>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Or paste XML</label>
+              <textarea id="ib-xml-text" rows="7" placeholder="Paste raw &lt;ivrScript&gt; XML here"></textarea>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="runIvrBuilderAnalyze()">Analyze File/XML</button>
+              <button type="button" class="btn-secondary" onclick="runIvrBuilderPalette()">Show Compiler Registry</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ivr-builder-main">
+          <div class="card">
+            <div class="card-title">Visual Flow Canvas</div>
+            <div id="ib-visual-status" class="visual-status"></div>
+            <div id="ib-visual-canvas" class="visual-canvas"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Menu Option Controls</div>
+            <div class="form-grid">
+              <div class="form-row">
+                <div class="field">
+                  <label>Script name</label>
+                  <input type="text" id="ib-script-name" value="${escHtml(SAMPLE_IVR_BUILD_PLAN.script_name)}">
+                </div>
+                <div class="field">
+                  <label>Description</label>
+                  <input type="text" id="ib-description" value="${escHtml(SAMPLE_IVR_BUILD_PLAN.description)}">
+                </div>
+              </div>
+              <div class="field">
+                <label>Greeting text</label>
+                <textarea id="ib-greeting-text" rows="3">${escHtml(SAMPLE_IVR_BUILD_PLAN.greeting.text)}</textarea>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label>Greeting prompt name</label>
+                  <input type="text" id="ib-greeting-prompt" value="${escHtml(SAMPLE_IVR_BUILD_PLAN.greeting.prompt_name)}">
+                </div>
+                <div class="field">
+                  <label>Menu name</label>
+                  <input type="text" id="ib-menu-name" value="${escHtml(SAMPLE_IVR_BUILD_PLAN.menu.name)}">
+                </div>
+              </div>
+              <div class="field">
+                <label>Options</label>
+                <div id="ib-menu-options" class="menu-options-list"></div>
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="addIvrMenuOption()">Add Option</button>
+              <button type="button" class="btn-secondary" onclick="syncIvrPlanFromControls()">Update Plan</button>
+              <button type="button" class="btn-secondary" onclick="runIvrBuilderValidate()">Validate Plan</button>
+              <button type="button" class="btn-primary" id="ib-compile-btn" onclick="runIvrBuilderCompile()">Compile XML</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Build Plan JSON</div>
+            <div class="field">
+              <label>AI/UI shared build plan</label>
+              <textarea id="ib-build-plan" rows="13">${escHtml(JSON.stringify(SAMPLE_IVR_BUILD_PLAN, null, 2))}</textarea>
+              <span class="hint">AI should edit this build plan, not raw XML. Unsupported raw modules are rejected by validation.</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Generated XML</div>
+            <div class="field">
+              <label>xmlDefinition / .five9ivr output</label>
+              <textarea id="ib-xml-output" rows="14" placeholder="Compile a build plan to generate Five9 IVR XML."></textarea>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="copyIvrBuilderXml()">Copy XML</button>
+              <button type="button" class="btn-secondary" onclick="downloadIvrBuilderXml()">Export .five9ivr</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="ib-tab-dry" onclick="setIvrBuilderMode('dry_run')">Dry Run Deploy</button>
+        <button type="button" class="mode-tab" id="ib-tab-live" onclick="setIvrBuilderMode('live')">Live Five9 Update</button>
+      </div>
+
+      <div class="card" id="ib-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="ib-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="ib-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="ib-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="ib-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="ib-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <div class="alert warning">Live deploy calls modifyIVRScript and can change call-flow behavior. Review the generated XML and target script name before approval.</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="ib-approved">
+          <span>I approve this generated Five9 IVR XML update exactly as shown.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-primary" onclick="runIvrBuilderDeploy()">Deploy Generated XML</button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("ib-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "ib");
+  });
+  renderIvrMenuOptionControls(SAMPLE_IVR_BUILD_PLAN.menu.options);
+  ["ib-script-name", "ib-description", "ib-greeting-text", "ib-greeting-prompt", "ib-menu-name"].forEach(id => {
+    document.getElementById(id).addEventListener("input", debounce(syncIvrPlanFromControls, 250));
+  });
+  document.getElementById("ib-build-plan").addEventListener("input", debounce(refreshIvrBuilderVisualFromActiveSource, 250));
+  setIvrBuilderMode("dry_run");
+  loadIvrBuilderCatalog();
+  refreshIvrBuilderVisualFromPlan();
+}
+
+function setIvrBuilderMode(mode) {
+  ivrBuilderMode = mode;
+  document.getElementById("ib-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("ib-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("ib-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("ib-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "dry_run") {
+    document.getElementById("ib-approved").checked = false;
+  }
+  clearResults();
+}
+
+function readIvrBuildPlan() {
+  return JSON.parse(document.getElementById("ib-build-plan").value);
+}
+
+function writeIvrBuildPlan(plan) {
+  document.getElementById("ib-build-plan").value = JSON.stringify(plan, null, 2);
+}
+
+async function loadIvrBuilderCatalog() {
+  const catalogEl = document.getElementById("ib-catalog");
+  try {
+    const res = await fetch("/api/run/five9/ivr-builder/catalog");
+    const catalog = await res.json();
+    const visual = await visualizeIvrPlan(readIvrBuildPlan());
+    renderIvrModulePalette(visual.palette || []);
+  } catch (e) {
+    catalogEl.textContent = `Could not load catalog: ${e.message}`;
+  }
+}
+
+function renderIvrModulePalette(palette) {
+  const catalogEl = document.getElementById("ib-catalog");
+  catalogEl.innerHTML = palette.map(module => `
+    <div class="module-chip ${module.locked ? "locked" : "active"}" title="${escHtml(module.locked_reason || module.output_behavior || "")}">
+      <div class="module-chip-title">${escHtml(module.label)}</div>
+      <div class="module-chip-meta">${escHtml(module.module_type)} · ${escHtml(module.locked ? "locked" : "supported")}</div>
+      <div class="module-chip-meta">${escHtml(module.output_behavior || "")}</div>
+    </div>
+  `).join("");
+}
+
+function renderIvrMenuOptionControls(options) {
+  const list = document.getElementById("ib-menu-options");
+  list.innerHTML = options.map((option, index) => `
+    <div class="menu-option-row" data-index="${index}">
+      <div class="field">
+        <label>Digit</label>
+        <input type="text" class="ib-option-digit" value="${escHtml(option.digit)}" maxlength="1">
+      </div>
+      <div class="field">
+        <label>Label</label>
+        <input type="text" class="ib-option-label" value="${escHtml(option.label)}">
+      </div>
+      <div class="field">
+        <label>Transfer</label>
+        <select class="ib-option-transfer-type">
+          <option value="skill" ${option.transfer_type === "skill" ? "selected" : ""}>skill</option>
+          <option value="campaign" ${option.transfer_type === "campaign" ? "selected" : ""}>campaign</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Target</label>
+        <input type="text" class="ib-option-target" value="${escHtml(option.target)}">
+      </div>
+      <button type="button" class="btn-secondary" title="Remove option" onclick="removeIvrMenuOption(${index})">×</button>
+    </div>
+  `).join("");
+  list.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("input", debounce(syncIvrPlanFromControls, 250));
+    el.addEventListener("change", syncIvrPlanFromControls);
+  });
+}
+
+function collectIvrOptionsFromControls() {
+  return [...document.querySelectorAll("#ib-menu-options .menu-option-row")].map(row => ({
+    digit: row.querySelector(".ib-option-digit").value.trim(),
+    label: row.querySelector(".ib-option-label").value.trim(),
+    transfer_type: row.querySelector(".ib-option-transfer-type").value,
+    target: row.querySelector(".ib-option-target").value.trim()
+  }));
+}
+
+function buildIvrPlanFromControls() {
+  return {
+    script_name: document.getElementById("ib-script-name").value.trim(),
+    description: document.getElementById("ib-description").value.trim(),
+    greeting: {
+      prompt_name: document.getElementById("ib-greeting-prompt").value.trim(),
+      text: document.getElementById("ib-greeting-text").value.trim()
+    },
+    menu: {
+      name: document.getElementById("ib-menu-name").value.trim(),
+      options: collectIvrOptionsFromControls(),
+      no_match: "hangup",
+      no_input: "hangup"
+    }
+  };
+}
+
+function syncIvrPlanFromControls() {
+  const plan = buildIvrPlanFromControls();
+  writeIvrBuildPlan(plan);
+  refreshIvrBuilderVisualFromPlan();
+}
+
+function syncIvrControlsFromPlan(plan) {
+  document.getElementById("ib-script-name").value = plan.script_name || "";
+  document.getElementById("ib-description").value = plan.description || "";
+  document.getElementById("ib-greeting-prompt").value = plan.greeting?.prompt_name || "";
+  document.getElementById("ib-greeting-text").value = plan.greeting?.text || "";
+  document.getElementById("ib-menu-name").value = plan.menu?.name || "";
+  renderIvrMenuOptionControls(plan.menu?.options || []);
+}
+
+function addIvrMenuOption() {
+  let plan;
+  try {
+    plan = buildIvrPlanFromControls();
+  } catch (e) {
+    plan = JSON.parse(JSON.stringify(SAMPLE_IVR_BUILD_PLAN));
+  }
+  const used = new Set((plan.menu.options || []).map(option => String(option.digit)));
+  const digit = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].find(value => !used.has(value)) || "";
+  plan.menu.options.push({ digit, label: "New Route", transfer_type: "skill", target: "New Skill" });
+  writeIvrBuildPlan(plan);
+  syncIvrControlsFromPlan(plan);
+  refreshIvrBuilderVisualFromPlan();
+}
+
+function removeIvrMenuOption(index) {
+  const plan = buildIvrPlanFromControls();
+  plan.menu.options.splice(index, 1);
+  writeIvrBuildPlan(plan);
+  syncIvrControlsFromPlan(plan);
+  refreshIvrBuilderVisualFromPlan();
+}
+
+function refreshIvrBuilderVisualFromActiveSource() {
+  try {
+    const plan = readIvrBuildPlan();
+    syncIvrControlsFromPlan(plan);
+    refreshIvrBuilderVisualFromPlan();
+  } catch (e) {
+    renderIvrVisualError(`Invalid build plan JSON: ${e.message}`);
+  }
+}
+
+async function refreshIvrBuilderVisualFromPlan() {
+  try {
+    const visual = await visualizeIvrPlan(readIvrBuildPlan());
+    renderIvrVisualPlan(visual);
+    if (visual.palette) renderIvrModulePalette(visual.palette);
+  } catch (e) {
+    renderIvrVisualError(e.message);
+  }
+}
+
+async function visualizeIvrPlan(plan) {
+  const res = await fetch("/api/run/five9/ivr-builder/visualize-plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ build_plan: plan })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || res.statusText);
+  }
+  return data;
+}
+
+function renderIvrVisualPlan(visual) {
+  const status = document.getElementById("ib-visual-status");
+  const canvas = document.getElementById("ib-visual-canvas");
+  const compileBtn = document.getElementById("ib-compile-btn");
+  compileBtn.disabled = !visual.valid;
+  status.innerHTML = `
+    <span class="pill ${visual.valid ? "created" : "failed"}">${visual.valid ? "valid" : "invalid"}</span>
+    <span class="pill total">${visual.nodes.length} nodes</span>
+    <span class="pill total">${visual.edges.length} edges</span>
+    ${visual.errors?.length ? `<span class="pill failed">${escHtml(visual.errors.join("; "))}</span>` : ""}
+  `;
+  if (!visual.valid) {
+    canvas.innerHTML = `<div class="alert error" style="margin:16px">${escHtml(visual.errors.join("; ") || "Build plan is invalid.")}</div>`;
+    return;
+  }
+
+  const nodeMap = new Map(visual.nodes.map(node => [node.id, node]));
+  const edgeLabels = visual.edges.filter(edge => edge.label).map(edge => {
+    const from = nodeMap.get(edge.from);
+    const to = nodeMap.get(edge.to);
+    if (!from || !to) return "";
+    const x = (Number(from.x) + Number(to.x)) / 2 + 58;
+    const y = (Number(from.y) + Number(to.y)) / 2 + 28;
+    return `<div class="visual-edge-label" style="left:${x}px; top:${y}px">${escHtml(edge.label)}</div>`;
+  }).join("");
+  const paths = visual.edges.map(edge => {
+    const from = nodeMap.get(edge.from);
+    const to = nodeMap.get(edge.to);
+    if (!from || !to) return "";
+    const x1 = Number(from.x) + 160;
+    const y1 = Number(from.y) + 36;
+    const x2 = Number(to.x);
+    const y2 = Number(to.y) + 36;
+    const mid = Math.max(x1 + 40, (x1 + x2) / 2);
+    return `<path class="visual-edge" d="M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}"></path>`;
+  }).join("");
+  const nodes = visual.nodes.map(node => `
+    <div class="visual-node ${escHtml(node.module_type)}" style="left:${Number(node.x)}px; top:${Number(node.y)}px">
+      <div class="visual-node-type">${escHtml(node.module_type)}</div>
+      <div class="visual-node-label">${escHtml(node.label)}</div>
+      <div class="visual-node-subtitle">${escHtml(node.subtitle || "")}</div>
+    </div>
+  `).join("");
+  canvas.innerHTML = `
+    <div class="visual-canvas-inner">
+      <svg class="visual-edges" viewBox="0 0 1160 430" preserveAspectRatio="none">
+        <defs>
+          <marker id="ivr-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#64748b"></path>
+          </marker>
+        </defs>
+        ${paths}
+      </svg>
+      ${edgeLabels}
+      ${nodes}
+    </div>
+  `;
+}
+
+function renderIvrVisualError(message) {
+  const status = document.getElementById("ib-visual-status");
+  const canvas = document.getElementById("ib-visual-canvas");
+  if (document.getElementById("ib-compile-btn")) document.getElementById("ib-compile-btn").disabled = true;
+  status.innerHTML = `<span class="pill failed">invalid</span>`;
+  canvas.innerHTML = `<div class="alert error" style="margin:16px">${escHtml(message)}</div>`;
+}
+
+function debounce(fn, wait) {
+  let timer = null;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+async function runIvrBuilderAnalyze() {
+  const payload = {
+    file_path: document.getElementById("ib-file-path").value.trim(),
+    xml_text: document.getElementById("ib-xml-text").value.trim(),
+    script_name: "Inline XML"
+  };
+  showIvrBuilderError("Offline IVR export analysis is developer-only and is not available from the app runtime.");
+}
+
+async function runIvrBuilderPalette() {
+  const payload = {
+    file_path: document.getElementById("ib-file-path").value.trim(),
+    xml_text: document.getElementById("ib-xml-text").value.trim(),
+    script_name: "Inline Palette"
+  };
+  showIvrBuilderError("Offline IVR export analysis is developer-only and is not available from the app runtime.");
+}
+
+async function runIvrBuilderValidate() {
+  try {
+    await postIvrBuilderJson(
+      "/api/run/five9/ivr-builder/validate-plan",
+      { build_plan: readIvrBuildPlan() },
+      "Build Plan Validation"
+    );
+  } catch (e) {
+    showIvrBuilderError(e.message);
+  }
+}
+
+async function runIvrBuilderCompile() {
+  try {
+    const data = await postIvrBuilderJson(
+      "/api/run/five9/ivr-builder/compile",
+      { build_plan: readIvrBuildPlan() },
+      "Compiled Five9 IVR XML"
+    );
+    if (data.xmlDefinition) {
+      document.getElementById("ib-xml-output").value = data.xmlDefinition;
+    }
+  } catch (e) {
+    showIvrBuilderError(e.message);
+  }
+}
+
+async function runIvrBuilderDeploy() {
+  let plan;
+  try {
+    plan = readIvrBuildPlan();
+  } catch (e) {
+    showIvrBuilderError(`Invalid build plan JSON: ${e.message}`);
+    return;
+  }
+  const xml = document.getElementById("ib-xml-output").value.trim();
+  if (!xml) {
+    showIvrBuilderError("Compile XML before deploy.");
+    return;
+  }
+  const payload = {
+    mode: ivrBuilderMode,
+    approved: document.getElementById("ib-approved").checked,
+    domain: document.getElementById("ib-domain").value,
+    username: document.getElementById("ib-username").value.trim(),
+    password: document.getElementById("ib-password").value,
+    script_name: plan.script_name,
+    description: plan.description || "",
+    xml_definition: xml
+  };
+  const data = await postIvrBuilderJson("/api/run/five9/ivr-builder/deploy", payload, "IVR Builder Deploy");
+  if (data.results) {
+    renderIvrScriptResults(document.getElementById("results-area"), data);
+  }
+}
+
+async function postIvrBuilderJson(endpoint, payload, title) {
+  const resultsArea = document.getElementById("results-area");
+  resultsArea.innerHTML = `<div class="alert warning">Running ${escHtml(title)}...</div>`;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || res.statusText);
+  }
+  showIvrBuilderData(title, data);
+  return data;
+}
+
+function showIvrBuilderData(title, data) {
+  const resultsArea = document.getElementById("results-area");
+  const validBadge = data.valid === undefined
+    ? ""
+    : data.valid
+      ? `<span class="pill created">valid</span>`
+      : `<span class="pill failed">invalid</span>`;
+  resultsArea.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">${escHtml(title)}</div>
+      <div class="summary-pills">
+        ${validBadge}
+        ${data.build_plan_schema ? `<span class="pill total">${escHtml(data.build_plan_schema)}</span>` : ""}
+      </div>
+      ${data.flow_summary ? `<pre class="preflight-data">${escHtml(data.flow_summary)}</pre>` : ""}
+      <pre class="preflight-data">${escHtml(JSON.stringify(data, null, 2))}</pre>
+    </div>`;
+  resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showIvrBuilderError(message) {
+  const resultsArea = document.getElementById("results-area");
+  resultsArea.innerHTML = `<div class="alert error">Error: ${escHtml(message)}</div>`;
+}
+
+async function copyIvrBuilderXml() {
+  const xml = document.getElementById("ib-xml-output").value;
+  if (!xml.trim()) {
+    showIvrBuilderError("No generated XML to copy.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(xml);
+    showIvrBuilderData("Copy XML", { result: "copied", bytes: xml.length });
+  } catch (e) {
+    showIvrBuilderError(`Copy failed: ${e.message}`);
+  }
+}
+
+function downloadIvrBuilderXml() {
+  const xml = document.getElementById("ib-xml-output").value;
+  if (!xml.trim()) {
+    showIvrBuilderError("No generated XML to export.");
+    return;
+  }
+  let scriptName = "five9-ivr-script";
+  try {
+    scriptName = readIvrBuildPlan().script_name || scriptName;
+  } catch (e) {
+    // Keep fallback name.
+  }
+  const blob = new Blob([xml], { type: "application/xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${scriptName.replace(/[^a-z0-9_-]+/gi, "_")}.five9ivr`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Five9 IVR Script Builder - VCC-style workspace override
+// ---------------------------------------------------------------------------
+let vccIvrState = {
+  palette: [],
+  visual: null,
+  customNodes: [],
+  canvasEdges: [],
+  referenceNodes: [],
+  selectedNodeId: "menu",
+  bottomTab: "plan",
+  drag: null,
+  hasWorkspace: false,
+  importedMode: false,
+  connectMode: false,
+  connectSourceId: null,
+  latestCompile: null
+};
+
+function renderFive9IvrBuilderForm(container, tool) {
+  container.innerHTML = `
+    <form id="ivr-builder-form" onsubmit="return false">
+      <div class="vcc-editor">
+        <div class="vcc-menu-bar">
+          <span>Actions</span><span>Script</span><span>View</span><span>Help</span>
+          <span style="margin-left:auto;color:#475569">Five9 IVR Builder - compiler-backed visual workspace</span>
+        </div>
+        <div class="vcc-toolbar">
+          <button type="button" class="vcc-tool-btn" title="New blank script" onclick="vccStartBlankScript()">＋</button>
+          <button type="button" class="vcc-tool-btn" title="Import .five9ivr" onclick="document.getElementById('ib-import-file').click()">⇪</button>
+          <button type="button" class="vcc-tool-btn" title="Load sample" onclick="vccLoadSampleScript()">◎</button>
+          <button type="button" class="vcc-tool-btn" title="Reset current script" onclick="vccResetIvrBuilder()">↺</button>
+          <button type="button" class="vcc-tool-btn" title="Validate" onclick="runIvrBuilderValidate()">✓</button>
+          <button type="button" class="vcc-tool-btn" title="Compile XML" id="ib-compile-btn" onclick="runIvrBuilderCompile()">⚙</button>
+          <button type="button" class="vcc-tool-btn" title="Export .five9ivr" onclick="downloadIvrBuilderXml()">⇩</button>
+          <button type="button" class="vcc-tool-btn" title="Deploy generated XML" onclick="runIvrBuilderDeploy()">▶</button>
+          <button type="button" class="vcc-tool-btn" title="Connect modules" id="ib-connect-btn" onclick="vccToggleConnectMode()">⛓</button>
+          <span class="pill total" id="ib-builder-schema">LEGO build plan → xmlDefinition</span>
+          <span class="pill skipped" id="ib-palette-source">Loading palette</span>
+          <input type="file" id="ib-import-file" accept=".five9ivr,.xml,text/xml" style="display:none" onchange="vccImportIvrFile(event)">
+        </div>
+
+        <div class="vcc-workspace">
+          <aside class="vcc-left">
+            <div class="vcc-pane-title">Module Palette</div>
+            <div class="vcc-palette-search">
+              <input type="text" id="ib-palette-search" placeholder="Filter modules..." oninput="vccRenderPalette()">
+            </div>
+            <div id="ib-catalog" class="vcc-module-list">Loading modules...</div>
+          </aside>
+
+          <section class="vcc-stage">
+            <div class="vcc-canvas-zone">
+              <span class="vcc-zone-label">Main Flow - Visual Flow Canvas</span>
+              <div id="ib-visual-status" class="visual-status" style="position:absolute;right:10px;top:7px;z-index:4"></div>
+              <div id="ib-visual-canvas" class="vcc-canvas-inner" ondragover="vccAllowDrop(event)" ondrop="vccDropModule(event)"></div>
+            </div>
+            <div class="vcc-canvas-zone">
+              <span class="vcc-zone-label">On Hangup</span>
+              <div id="ib-onhangup-canvas" class="vcc-onhangup-inner"></div>
+            </div>
+          </section>
+
+          <aside class="vcc-right">
+            <div class="vcc-pane-title">Properties - Menu Option Controls</div>
+            <div id="ib-inspector" class="vcc-inspector"></div>
+          </aside>
+        </div>
+
+        <div class="vcc-statusbar">
+          <span id="ib-vcc-status-text">Ready</span>
+          <span>Live writes require explicit approval and credentials.</span>
+        </div>
+      </div>
+
+      <div class="vcc-bottom-tabs">
+        <button type="button" class="vcc-bottom-tab active" id="ib-tab-plan-panel" onclick="vccShowBottomTab('plan')">Build Plan JSON</button>
+        <button type="button" class="vcc-bottom-tab" id="ib-tab-xml-panel" onclick="vccShowBottomTab('xml')">Generated XML</button>
+        <button type="button" class="vcc-bottom-tab" id="ib-tab-deploy-panel" onclick="vccShowBottomTab('deploy')">Deploy</button>
+      </div>
+
+      <div class="vcc-bottom-panel active" id="ib-panel-plan">
+        <div class="field">
+          <label>AI/UI shared build plan</label>
+          <textarea id="ib-build-plan" rows="12">${escHtml(JSON.stringify(BLANK_IVR_BUILD_PLAN, null, 2))}</textarea>
+          <span class="hint">The visual editor and AI both work through this normalized plan. Raw XML is generated by the compiler.</span>
+        </div>
+      </div>
+
+      <div class="vcc-bottom-panel" id="ib-panel-xml">
+        <div class="field">
+          <label>xmlDefinition / .five9ivr output</label>
+          <textarea id="ib-xml-output" rows="13" placeholder="Compile a supported visual flow to generate Five9 IVR XML."></textarea>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" onclick="copyIvrBuilderXml()">Copy XML</button>
+          <button type="button" class="btn-secondary" onclick="downloadIvrBuilderXml()">Export .five9ivr</button>
+        </div>
+      </div>
+
+      <div class="vcc-bottom-panel" id="ib-panel-deploy">
+        <div class="mode-tabs">
+          <button type="button" class="mode-tab active" id="ib-tab-dry" onclick="setIvrBuilderMode('dry_run')">Dry Run Deploy</button>
+          <button type="button" class="mode-tab" id="ib-tab-live" onclick="setIvrBuilderMode('live')">Live Five9 Update</button>
+        </div>
+
+        <div class="card" id="ib-live-card" style="display:none">
+          <div class="cred-header">
+            <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+            <button type="button" class="btn-link" id="ib-load-creds-btn">Load from .env</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Domain</label>
+              <select id="ib-domain">
+                <option value="api.five9.com">api.five9.com (US)</option>
+                <option value="api.five9.eu">api.five9.eu (EU)</option>
+                <option value="api.five9.ca">api.five9.ca (CA)</option>
+                <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Username</label>
+                <input type="text" id="ib-username" placeholder="user@domain.com" autocomplete="username">
+              </div>
+              <div class="field">
+                <label>Password</label>
+                <input type="password" id="ib-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="ib-approval-card" style="display:none">
+          <div class="card-title">Approval Gate</div>
+          <div class="alert warning">Live deploy calls modifyIVRScript and can change call-flow behavior. Review the generated XML and target script name before approval.</div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="ib-approved">
+            <span>I approve this generated Five9 IVR XML update exactly as shown.</span>
+          </label>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Module Certification</div>
+          <div class="alert warning">Compiler-candidate modules are certified by modifying and reading back the disposable script <strong>ZZ_TEST_Codex_IVR_ModuleLab</strong>. Live certification requires credentials and explicit approval.</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Module types</label>
+              <input type="text" id="ib-cert-modules" value="query" placeholder="query, getDigits, ifElse">
+            </div>
+            <div class="field">
+              <label>Target script</label>
+              <input type="text" id="ib-cert-target" value="ZZ_TEST_Codex_IVR_ModuleLab">
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-secondary" onclick="runIvrBuilderCertification('dry_run')">Dry Run Certification</button>
+            <button type="button" class="btn-secondary" onclick="runIvrBuilderCertification('live')">Live Certify Selected</button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-primary" onclick="runIvrBuilderDeploy()">Deploy Generated XML</button>
+          <button type="button" class="btn-secondary" onclick="clearResults()">Clear Results</button>
+        </div>
+      </div>
+    </form>`;
+
+  document.getElementById("ib-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "ib");
+  });
+  document.getElementById("ib-build-plan").addEventListener("input", debounce(vccRefreshFromBuildPlan, 250));
+  setIvrBuilderMode("dry_run");
+  vccShowBottomTab("plan");
+  vccLoadPalette();
+  vccRenderStartScreen();
+}
+
+async function vccLoadPalette(filePath = "", folderPath = "") {
+  const res = await fetch("/api/run/five9/ivr-builder/palette", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({})
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    showIvrBuilderError(data.detail || res.statusText);
+    return;
+  }
+  vccIvrState.palette = data.modules || [];
+  document.getElementById("ib-palette-source").textContent = data.palette_source || "builtin_catalog";
+  vccRenderPalette();
+}
+
+function vccLoadPaletteFromPath() {
+  showIvrBuilderError("Offline IVR export analysis is developer-only and is not available from the app runtime.");
+}
+
+async function vccBuildModuleManual() {
+  showIvrBuilderError("Offline IVR export analysis is developer-only and is not available from the app runtime.");
+}
+
+function renderVccModuleManual(container, data) {
+  const rows = (data.modules || []).map(module => `
+    <tr>
+      <td><span class="tool-name">${escHtml(module.module_type)}</span><br><span class="hint">${escHtml(module.label)} · ${escHtml(module.group)}</span></td>
+      <td><span class="action-badge ${module.compiler_supported ? "created" : "dry-run"}">${module.compiler_supported ? "compiler-ready" : "reference-only"}</span></td>
+      <td>${escHtml(module.count)} instance(s)<br><span class="hint">${escHtml(module.script_count)} script(s)</span></td>
+      <td>${escHtml((module.data_fields || []).slice(0, 8).map(field => field.name).join(", ") || "none observed")}</td>
+      <td>${escHtml((module.connection_fields || []).slice(0, 6).map(field => field.name).join(", ") || "none observed")}</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        <pre class="preflight-data">${escHtml(JSON.stringify({
+          build_instruction: module.build_instruction,
+          branch_labels: module.branch_labels,
+          transfer_target_examples: module.transfer_target_examples,
+          query_methods: module.query_methods,
+          query_url_examples: module.query_url_examples,
+          example_scripts: module.example_scripts,
+          example_names: module.example_names
+        }, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Five9 IVR Building Block Manual</div>
+      <div class="summary-pills">
+        <span class="pill total">${escHtml(data.script_count)} scripts</span>
+        <span class="pill total">${escHtml(data.module_type_count)} module types</span>
+        ${data.failed_count ? `<span class="pill failed">${escHtml(data.failed_count)} failed</span>` : ""}
+      </div>
+      <div class="alert warning">This is the XML breakdown layer. Compiler-ready blocks can generate XML now; reference-only blocks need a compiler template before deploy.</div>
+      <pre class="preflight-data">${escHtml(data.summary || "")}</pre>
+      <table>
+        <thead>
+          <tr>
+            <th>Block</th>
+            <th>Status</th>
+            <th>Observed</th>
+            <th>Data Fields</th>
+            <th>Connections</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function vccRenderStartScreen() {
+  const main = document.getElementById("ib-visual-canvas");
+  const hangup = document.getElementById("ib-onhangup-canvas");
+  const status = document.getElementById("ib-visual-status");
+  if (document.getElementById("ib-compile-btn")) document.getElementById("ib-compile-btn").disabled = true;
+  status.innerHTML = `<span class="pill skipped">no script loaded</span>`;
+  document.getElementById("ib-vcc-status-text").textContent = "Start a blank script or import a .five9ivr file.";
+  main.innerHTML = `
+    <div class="alert warning" style="position:absolute;left:24px;top:24px;width:520px">
+      No script is loaded. Start from a blank compiler-backed script, load the sample, or import a .five9ivr file for visual inspection.
+      <div class="actions" style="margin-top:12px">
+        <button type="button" class="btn-primary" onclick="vccStartBlankScript()">New Blank Script</button>
+        <button type="button" class="btn-secondary" onclick="document.getElementById('ib-import-file').click()">Import .five9ivr</button>
+        <button type="button" class="btn-secondary" onclick="vccLoadSampleScript()">Load Sample</button>
+      </div>
+    </div>`;
+  hangup.innerHTML = "";
+  document.getElementById("ib-inspector").innerHTML = `
+    <div class="vcc-inspector-section">
+      <h3>No script loaded</h3>
+      <span class="hint">Choose New Blank Script to build, or Import to inspect an existing Five9 export.</span>
+    </div>`;
+}
+
+function vccStartBlankScript() {
+  vccIvrState.hasWorkspace = true;
+  vccIvrState.importedMode = false;
+  vccIvrState.referenceNodes = [];
+  vccIvrState.customNodes = [];
+  vccIvrState.canvasEdges = [];
+  vccIvrState.latestCompile = null;
+  vccIvrState.selectedNodeId = "menu";
+  writeIvrBuildPlan(JSON.parse(JSON.stringify(BLANK_IVR_BUILD_PLAN)));
+  document.getElementById("ib-xml-output").value = "";
+  vccRefreshFromBuildPlan();
+}
+
+function vccLoadSampleScript() {
+  vccIvrState.hasWorkspace = true;
+  vccIvrState.importedMode = false;
+  vccIvrState.referenceNodes = [];
+  vccIvrState.customNodes = [];
+  vccIvrState.canvasEdges = [];
+  vccIvrState.latestCompile = null;
+  vccIvrState.selectedNodeId = "menu";
+  writeIvrBuildPlan(JSON.parse(JSON.stringify(SAMPLE_IVR_BUILD_PLAN)));
+  document.getElementById("ib-xml-output").value = "";
+  vccRefreshFromBuildPlan();
+}
+
+function vccToggleConnectMode() {
+  vccIvrState.connectMode = !vccIvrState.connectMode;
+  vccIvrState.connectSourceId = null;
+  document.getElementById("ib-connect-btn").classList.toggle("active", vccIvrState.connectMode);
+  document.getElementById("ib-vcc-status-text").textContent = vccIvrState.connectMode
+    ? "Connect mode: select a source block, then a target block."
+    : "Connect mode off.";
+}
+
+function vccRenderPalette() {
+  const list = document.getElementById("ib-catalog");
+  if (!list) return;
+  const filter = (document.getElementById("ib-palette-search")?.value || "").trim().toLowerCase();
+  let currentGroup = "";
+  const rows = [];
+  for (const module of vccIvrState.palette) {
+    const haystack = `${module.label} ${module.module_type} ${module.group}`.toLowerCase();
+    if (filter && !haystack.includes(filter)) continue;
+    if (module.group !== currentGroup) {
+      currentGroup = module.group;
+      rows.push(`<div class="vcc-module-group">${escHtml(currentGroup)}</div>`);
+    }
+    rows.push(`
+      <div class="vcc-module-item ${module.locked ? "locked" : ""}" draggable="true" ondragstart="vccStartPaletteDrag(event, '${escHtml(module.module_type)}')" onclick="vccAddModule('${escHtml(module.module_type)}')" title="${escHtml(module.locked_reason || module.output_behavior || "")}">
+        <div class="vcc-module-icon">${vccModuleIcon(module.module_type)}</div>
+        <div>
+          <div class="vcc-module-name">${escHtml(module.label)}</div>
+          <div class="vcc-module-meta">${escHtml(module.module_type)} · ${escHtml(module.status_label || module.generation_status)}</div>
+        </div>
+      </div>
+    `);
+  }
+  list.innerHTML = rows.join("") || `<div class="alert warning">No matching modules.</div>`;
+}
+
+function vccStartPaletteDrag(event, moduleType) {
+  event.dataTransfer.setData("text/plain", moduleType);
+  event.dataTransfer.effectAllowed = "copy";
+}
+
+function vccAllowDrop(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+}
+
+function vccDropModule(event) {
+  event.preventDefault();
+  const moduleType = event.dataTransfer.getData("text/plain");
+  if (!moduleType) return;
+  const canvas = document.getElementById("ib-visual-canvas");
+  const rect = canvas.getBoundingClientRect();
+  vccAddModule(moduleType, {
+    x: Math.max(0, Math.round(event.clientX - rect.left + canvas.scrollLeft - 58)),
+    y: Math.max(0, Math.round(event.clientY - rect.top + canvas.scrollTop - 35))
+  });
+}
+
+function vccAddModule(moduleType, position = null) {
+  const module = vccIvrState.palette.find(item => item.module_type === moduleType) || { module_type: moduleType, label: moduleType, locked: true };
+  if (!vccIvrState.hasWorkspace) {
+    vccStartBlankScript();
+  }
+  if (module.locked) {
+    const id = `ref_${moduleType}_${Date.now()}`;
+    vccIvrState.referenceNodes.push({
+      id,
+      module_type: moduleType,
+      label: module.label || moduleType,
+      subtitle: "Reference only - Not compiler-supported yet",
+      x: position?.x ?? 80 + (vccIvrState.referenceNodes.length % 5) * 145,
+      y: position?.y ?? 360,
+      unsupported: true,
+      zone: "main"
+    });
+    vccIvrState.selectedNodeId = id;
+    vccRenderVisual();
+    return;
+  }
+
+  if (moduleType === "skillTransfer" || moduleType === "campaignTransfer") {
+    const plan = readIvrBuildPlan();
+    const used = new Set((plan.menu?.options || []).map(option => String(option.digit)));
+    const digit = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].find(value => !used.has(value)) || "";
+    plan.menu.options.push({
+      digit,
+      label: moduleType === "skillTransfer" ? "New Skill Route" : "New Campaign Route",
+      transfer_type: moduleType === "skillTransfer" ? "skill" : "campaign",
+      target: moduleType === "skillTransfer" ? "New Skill" : "New Campaign"
+    });
+    if (position) {
+      plan.layout = plan.layout && typeof plan.layout === "object" ? plan.layout : {};
+      plan.layout[`transfer_${digit}`] = { x: position.x, y: position.y };
+    }
+    writeIvrBuildPlan(plan);
+    vccIvrState.selectedNodeId = `transfer_${digit}`;
+    vccRefreshFromBuildPlan();
+    return;
+  }
+
+  const existing = {
+    incomingCall: "incoming",
+    play: "greeting",
+    menu: "menu",
+    hangup: "hangup"
+  }[moduleType];
+  if (existing) {
+    vccIvrState.selectedNodeId = existing;
+    vccRenderVisual();
+    return;
+  }
+
+  const id = `node_${moduleType}_${Date.now()}`;
+  vccIvrState.customNodes.push({
+    id,
+    module_type: moduleType,
+    label: module.label || moduleType,
+    subtitle: module.status_label || "Compiler candidate",
+    x: position?.x ?? 120 + (vccIvrState.customNodes.length % 5) * 170,
+    y: position?.y ?? 310,
+    config: vccDefaultNodeConfig(moduleType),
+    unsupported: false,
+    zone: "main",
+    certification: module.certification || {}
+  });
+  vccIvrState.selectedNodeId = id;
+  vccRenderVisual();
+}
+
+async function vccRefreshFromBuildPlan() {
+  if (!vccIvrState.hasWorkspace) {
+    vccRenderStartScreen();
+    return;
+  }
+  try {
+    const visual = await visualizeIvrPlan(readIvrBuildPlan());
+    if (!visual.valid && visual.errors?.includes("menu.options must include at least one option")) {
+      const plan = readIvrBuildPlan();
+      const layout = plan.layout || {};
+      visual.valid = true;
+      visual.errors = [];
+      visual.warnings = ["Blank script scaffold: add or connect modules before deploy."];
+      visual.nodes = [
+        { id: "incoming", module_type: "incomingCall", label: "Incoming Call", subtitle: plan.script_name || "", x: layout.incoming?.x ?? 40, y: layout.incoming?.y ?? 170, locked: false },
+        { id: "greeting", module_type: "play", label: "Play Greeting", subtitle: plan.greeting?.prompt_name || "", x: layout.greeting?.x ?? 260, y: layout.greeting?.y ?? 170, locked: false },
+        { id: "menu", module_type: "menu", label: plan.menu?.name || "Main Menu", subtitle: "0 options", x: layout.menu?.x ?? 500, y: layout.menu?.y ?? 170, locked: false },
+        { id: "hangup", module_type: "hangup", label: "Hangup", subtitle: "No Match / No Input", x: layout.hangup?.x ?? 1010, y: layout.hangup?.y ?? 170, locked: false }
+      ];
+      visual.edges = [
+        { id: "edge_incoming_greeting", from: "incoming", to: "greeting", label: "" },
+        { id: "edge_greeting_menu", from: "greeting", to: "menu", label: "" },
+        { id: "edge_menu_hangup_no_match", from: "menu", to: "hangup", label: "No Match" },
+        { id: "edge_menu_hangup_no_input", from: "menu", to: "hangup", label: "No Input" }
+      ];
+    }
+    vccIvrState.visual = visual;
+    vccRenderVisual();
+  } catch (e) {
+    renderIvrVisualError(e.message);
+  }
+}
+
+function vccRenderVisual() {
+  const visual = vccIvrState.visual;
+  if (!visual) return;
+  const main = document.getElementById("ib-visual-canvas");
+  const hangup = document.getElementById("ib-onhangup-canvas");
+  const status = document.getElementById("ib-visual-status");
+  const allNodes = [...(visual.nodes || []), ...vccIvrState.customNodes, ...vccIvrState.referenceNodes];
+  const allEdges = [...(visual.edges || []), ...vccIvrState.canvasEdges];
+  const unsupported = vccIvrState.referenceNodes.filter(node => node.zone !== "reference");
+  const compileAllowed = visual.valid && unsupported.length === 0 && !vccIvrState.importedMode;
+  document.getElementById("ib-compile-btn").disabled = !compileAllowed;
+  document.getElementById("ib-vcc-status-text").textContent = compileAllowed
+    ? "Supported flow ready to compile"
+    : vccIvrState.importedMode
+      ? "Imported script is view-only. Rebuild it as a supported compiler plan before deploy."
+      : unsupported.length
+      ? "Compile blocked: unsupported module exists in Main Flow"
+      : (visual.errors || []).join("; ");
+  status.innerHTML = `
+    <span class="pill ${compileAllowed ? "created" : "failed"}">${compileAllowed ? "compile-ready" : "blocked"}</span>
+    ${vccIvrState.connectMode ? `<span class="pill skipped">connect mode</span>` : ""}
+    <span class="pill total">${allNodes.length} modules</span>
+    <span class="pill total">${allEdges.length} links</span>
+  `;
+
+  const nodeMap = new Map(allNodes.map(node => [node.id, node]));
+  const paths = allEdges.map(edge => {
+    const from = nodeMap.get(edge.from || edge.source);
+    const to = nodeMap.get(edge.to || edge.target);
+    if (!from || !to) return "";
+    const x1 = Number(from.x) + 116;
+    const y1 = Number(from.y) + 35;
+    const x2 = Number(to.x);
+    const y2 = Number(to.y) + 35;
+    const mid = Math.max(x1 + 35, (x1 + x2) / 2);
+    return `<path class="vcc-edge" d="M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}"></path>`;
+  }).join("");
+  const labels = allEdges.filter(edge => edge.label).map(edge => {
+    const from = nodeMap.get(edge.from || edge.source);
+    const to = nodeMap.get(edge.to || edge.target);
+    if (!from || !to) return "";
+    const x = (Number(from.x) + Number(to.x)) / 2 + 44;
+    const y = (Number(from.y) + Number(to.y)) / 2 + 24;
+    return `<div class="vcc-edge-label" style="left:${x}px;top:${y}px">${escHtml(edge.label)}</div>`;
+  }).join("");
+  const nodes = allNodes.map(node => `
+    <div class="vcc-node ${node.unsupported ? "unsupported" : ""} ${vccIvrState.connectSourceId === node.id ? "connect-source" : ""} ${vccIvrState.selectedNodeId === node.id ? "selected" : ""}" data-node-id="${escHtml(node.id)}" style="left:${Number(node.x)}px;top:${Number(node.y)}px" onpointerdown="vccStartNodeDrag(event, '${escHtml(node.id)}')" onclick="vccHandleNodeClick('${escHtml(node.id)}')">
+      <div class="vcc-node-port vcc-port-in"></div>
+      <div class="vcc-node-port vcc-port-out"></div>
+      <div class="vcc-node-icon">${vccModuleIcon(node.module_type)}</div>
+      <div class="vcc-node-name">${escHtml(node.label)}</div>
+    </div>
+  `).join("");
+  main.innerHTML = `
+    <svg class="vcc-edges" viewBox="0 0 1180 510" preserveAspectRatio="none">
+      <defs><marker id="vcc-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#111827"></path></marker></defs>
+      ${paths}
+    </svg>
+    ${labels}
+    ${nodes}
+  `;
+  hangup.innerHTML = `
+    <svg class="vcc-edges" viewBox="0 0 1180 145" preserveAspectRatio="none">
+      <defs><marker id="vcc-arrow-h" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#111827"></path></marker></defs>
+      <path class="vcc-edge" marker-end="url(#vcc-arrow-h)" d="M 166 70 C 230 70, 230 70, 294 70"></path>
+    </svg>
+    <div class="vcc-node" style="left:50px;top:35px"><div class="vcc-node-port vcc-port-out"></div><div class="vcc-node-icon">✖</div><div class="vcc-node-name">StartOnHangup</div></div>
+    <div class="vcc-node" style="left:295px;top:35px"><div class="vcc-node-port vcc-port-in"></div><div class="vcc-node-icon">☎</div><div class="vcc-node-name">Hangup</div></div>
+  `;
+  vccRenderInspector();
+}
+
+function vccHandleNodeClick(nodeId) {
+  if (vccIvrState.connectMode) {
+    vccHandleConnectClick(nodeId);
+    return;
+  }
+  vccSelectNode(nodeId);
+}
+
+function vccSelectNode(nodeId) {
+  vccIvrState.selectedNodeId = nodeId;
+  vccRenderVisual();
+}
+
+function vccHandleConnectClick(nodeId) {
+  if (vccIvrState.importedMode) {
+    showIvrBuilderError("Imported scripts are view-only. Start a blank compiler-backed script to edit connections.");
+    return;
+  }
+  if (!vccIvrState.connectSourceId) {
+    vccIvrState.connectSourceId = nodeId;
+    vccIvrState.selectedNodeId = nodeId;
+    document.getElementById("ib-vcc-status-text").textContent = `Connect mode: source ${nodeId} selected. Choose target.`;
+    vccRenderVisual();
+    return;
+  }
+  const source = vccIvrState.connectSourceId;
+  vccIvrState.connectSourceId = null;
+  vccConnectNodes(source, nodeId);
+}
+
+function vccConnectNodes(sourceId, targetId) {
+  if (sourceId === targetId) {
+    showIvrBuilderError("Cannot connect a module to itself.");
+    vccRenderVisual();
+    return;
+  }
+  const existingEdges = [...(((vccIvrState.visual || {}).edges) || []), ...vccIvrState.canvasEdges];
+  if (existingEdges.some(edge => (edge.from || edge.source) === sourceId && (edge.to || edge.target) === targetId)) {
+    document.getElementById("ib-vcc-status-text").textContent = "Those modules are already connected.";
+    vccRenderVisual();
+    return;
+  }
+  const sourceNode = vccFindCanvasNode(sourceId);
+  const defaultLabel = sourceNode && ["menu", "ifElse", "case", "answerMachine"].includes(sourceNode.module_type) ? "Next" : "success";
+  const label = window.prompt("Connection label / branch output", defaultLabel) || defaultLabel;
+  vccIvrState.canvasEdges.push({
+    id: `edge_${sourceId}_${targetId}_${Date.now()}`,
+    from: sourceId,
+    to: targetId,
+    source: sourceId,
+    target: targetId,
+    label
+  });
+  document.getElementById("ib-vcc-status-text").textContent = `Connected ${sourceId} to ${targetId}.`;
+  vccRenderVisual();
+  return;
+  if (sourceId === "incoming" && targetId === "greeting") {
+    document.getElementById("ib-vcc-status-text").textContent = "Incoming Call is connected to Greeting by the compiler.";
+    vccRenderVisual();
+    return;
+  }
+  if (sourceId === "greeting" && targetId === "menu") {
+    document.getElementById("ib-vcc-status-text").textContent = "Greeting is connected to Menu by the compiler.";
+    vccRenderVisual();
+    return;
+  }
+  if (sourceId.startsWith("transfer_") && targetId === "hangup") {
+    document.getElementById("ib-vcc-status-text").textContent = "Transfer completion is connected to Hangup by the compiler.";
+    vccRenderVisual();
+    return;
+  }
+  if (sourceId === "menu" && targetId.startsWith("transfer_")) {
+    const plan = readIvrBuildPlan();
+    const digit = targetId.replace("transfer_", "");
+    const option = (plan.menu?.options || []).find(item => String(item.digit) === digit);
+    if (!option) {
+      showIvrBuilderError("Menu can only connect to a route created from a Skill Transfer block.");
+      vccRenderVisual();
+      return;
+    }
+    document.getElementById("ib-vcc-status-text").textContent = `Menu option ${digit} is connected to ${option.label}.`;
+    vccRenderVisual();
+    return;
+  }
+  showIvrBuilderError("That connection is not supported by the V1 compiler. V1 supports Incoming -> Greeting -> Menu -> Skill Transfer -> Hangup.");
+  vccRenderVisual();
+}
+
+function vccStartNodeDrag(event, nodeId) {
+  if (event.button !== 0) return;
+  const node = vccFindCanvasNode(nodeId);
+  if (!node) return;
+  event.preventDefault();
+  event.stopPropagation();
+  vccIvrState.drag = {
+    nodeId,
+    startClientX: event.clientX,
+    startClientY: event.clientY,
+    startX: Number(node.x) || 0,
+    startY: Number(node.y) || 0,
+    x: Number(node.x) || 0,
+    y: Number(node.y) || 0,
+    moved: false
+  };
+  document.addEventListener("pointermove", vccMoveNodeDrag);
+  document.addEventListener("pointerup", vccEndNodeDrag, { once: true });
+}
+
+function vccMoveNodeDrag(event) {
+  const drag = vccIvrState.drag;
+  if (!drag) return;
+  drag.x = Math.max(0, Math.round(drag.startX + event.clientX - drag.startClientX));
+  drag.y = Math.max(0, Math.round(drag.startY + event.clientY - drag.startClientY));
+  drag.moved = true;
+  const el = document.querySelector(`[data-node-id="${CSS.escape(drag.nodeId)}"]`);
+  if (el) {
+    el.style.left = `${drag.x}px`;
+    el.style.top = `${drag.y}px`;
+  }
+}
+
+function vccEndNodeDrag() {
+  document.removeEventListener("pointermove", vccMoveNodeDrag);
+  const drag = vccIvrState.drag;
+  vccIvrState.drag = null;
+  if (!drag || !drag.moved) return;
+  vccApplyNodePosition(drag.nodeId, drag.x, drag.y);
+}
+
+function vccFindCanvasNode(nodeId) {
+  return [
+    ...((vccIvrState.visual || {}).nodes || []),
+    ...vccIvrState.customNodes,
+    ...vccIvrState.referenceNodes
+  ].find(node => node.id === nodeId);
+}
+
+function vccApplyNodePosition(nodeId, x, y) {
+  const custom = vccIvrState.customNodes.find(node => node.id === nodeId);
+  if (custom) {
+    custom.x = x;
+    custom.y = y;
+    vccIvrState.selectedNodeId = nodeId;
+    vccRenderVisual();
+    return;
+  }
+  const reference = vccIvrState.referenceNodes.find(node => node.id === nodeId);
+  if (reference) {
+    reference.x = x;
+    reference.y = y;
+    vccIvrState.selectedNodeId = nodeId;
+    vccRenderVisual();
+    return;
+  }
+  const plan = readIvrBuildPlan();
+  plan.layout = plan.layout && typeof plan.layout === "object" ? plan.layout : {};
+  plan.layout[nodeId] = { x, y };
+  writeIvrBuildPlan(plan);
+  vccIvrState.selectedNodeId = nodeId;
+  vccRefreshFromBuildPlan();
+}
+
+function vccRenderInspector() {
+  const inspector = document.getElementById("ib-inspector");
+  const visual = vccIvrState.visual || { nodes: [] };
+  const node = [...(visual.nodes || []), ...vccIvrState.customNodes, ...vccIvrState.referenceNodes].find(item => item.id === vccIvrState.selectedNodeId);
+  if (!node) {
+    inspector.innerHTML = `<div class="vcc-inspector-section"><h3>No module selected</h3><span class="hint">Select a canvas block or palette module.</span></div>`;
+    return;
+  }
+  if (vccIvrState.importedMode) {
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>${escHtml(node.label || node.module_type)}</h3>
+        <div class="alert warning">Imported scripts are visual inspection only. To deploy generated XML, rebuild the flow as a compiler-backed plan.</div>
+        <div class="field"><label>Module type</label><input type="text" value="${escHtml(node.module_type)}" readonly></div>
+        <div class="field"><label>Module ID</label><input type="text" value="${escHtml(node.module_id || node.id)}" readonly></div>
+        <div class="field"><label>Compiler status</label><input type="text" value="${node.unsupported ? "reference only" : "known block"}" readonly></div>
+      </div>`;
+    return;
+  }
+  if (node.unsupported) {
+    const module = vccIvrState.palette.find(item => item.module_type === node.module_type) || {};
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>${escHtml(node.label)}</h3>
+        <div class="alert warning">Not compiler-supported yet. This block is visible for VCC-style planning and XML research, but it blocks V1 compile while placed in Main Flow.</div>
+        <div class="field"><label>Module type</label><input type="text" value="${escHtml(node.module_type)}" readonly></div>
+        <div class="field"><label>Discovered fields</label><textarea rows="5" readonly>${escHtml(JSON.stringify(module.data_fields || [], null, 2))}</textarea></div>
+        <button type="button" class="btn-secondary" onclick="vccRemoveSelectedReferenceNode()">Remove Reference Block</button>
+      </div>`;
+    return;
+  }
+  if (vccIvrState.customNodes.some(item => item.id === node.id)) {
+    const module = vccIvrState.palette.find(item => item.module_type === node.module_type) || {};
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>${escHtml(node.label)}</h3>
+        <div class="alert warning">${escHtml(module.status_label || "Compiler candidate")} ${module.certification?.status === "pending" ? "Live certification pending before deploy." : ""}</div>
+        <div class="field"><label>Label</label><input type="text" id="vcc-custom-label" value="${escHtml(node.label)}" oninput="vccUpdateCustomNode('${escHtml(node.id)}')"></div>
+        <div class="field"><label>Module type</label><input type="text" value="${escHtml(node.module_type)}" readonly></div>
+        <div class="field"><label>Config JSON</label><textarea id="vcc-custom-config" rows="8" oninput="vccUpdateCustomNode('${escHtml(node.id)}')">${escHtml(JSON.stringify(node.config || {}, null, 2))}</textarea></div>
+        <button type="button" class="btn-secondary" onclick="vccRemoveCustomNode('${escHtml(node.id)}')">Remove Block</button>
+      </div>`;
+    return;
+  }
+  const plan = readIvrBuildPlan();
+  if (node.id === "greeting") {
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>Play Greeting</h3>
+        <div class="field"><label>Prompt name</label><input type="text" id="vcc-field-prompt" value="${escHtml(plan.greeting.prompt_name)}" oninput="vccUpdateGreetingFromInspector()"></div>
+        <div class="field"><label>Text</label><textarea id="vcc-field-greeting-text" rows="5" oninput="vccUpdateGreetingFromInspector()">${escHtml(plan.greeting.text)}</textarea></div>
+      </div>`;
+    return;
+  }
+  if (node.id === "menu") {
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>Main Menu</h3>
+        <div class="field"><label>Menu name</label><input type="text" id="vcc-field-menu-name" value="${escHtml(plan.menu.name)}" oninput="vccUpdateMenuNameFromInspector()"></div>
+        <div class="field"><label>Options</label><textarea rows="7" readonly>${escHtml(JSON.stringify(plan.menu.options, null, 2))}</textarea></div>
+        <button type="button" class="btn-secondary" onclick="vccAddModule('skillTransfer')">Add Skill Route</button>
+        <button type="button" class="btn-secondary" onclick="vccAddModule('campaignTransfer')">Add Campaign Route</button>
+      </div>`;
+    return;
+  }
+  if (node.id.startsWith("transfer_")) {
+    const digit = node.digit || node.id.replace("transfer_", "");
+    const index = plan.menu.options.findIndex(option => String(option.digit) === String(digit));
+    const option = plan.menu.options[index] || {};
+    inspector.innerHTML = `
+      <div class="vcc-inspector-section">
+        <h3>${escHtml(node.module_type)}</h3>
+        <div class="form-row">
+          <div class="field"><label>Digit</label><input type="text" id="vcc-field-digit" value="${escHtml(option.digit || "")}" maxlength="1" oninput="vccUpdateTransferFromInspector(${index})"></div>
+          <div class="field"><label>Transfer</label><select id="vcc-field-transfer-type" onchange="vccUpdateTransferFromInspector(${index})"><option value="skill" ${option.transfer_type === "skill" ? "selected" : ""}>skill</option><option value="campaign" ${option.transfer_type === "campaign" ? "selected" : ""}>campaign</option></select></div>
+        </div>
+        <div class="field"><label>Label</label><input type="text" id="vcc-field-label" value="${escHtml(option.label || "")}" oninput="vccUpdateTransferFromInspector(${index})"></div>
+        <div class="field"><label>Target</label><input type="text" id="vcc-field-target" value="${escHtml(option.target || "")}" oninput="vccUpdateTransferFromInspector(${index})"></div>
+        <button type="button" class="btn-secondary" onclick="vccRemoveTransfer(${index})">Remove Route</button>
+      </div>`;
+    return;
+  }
+  inspector.innerHTML = `
+    <div class="vcc-inspector-section">
+      <h3>${escHtml(node.label)}</h3>
+      <div class="field"><label>Module type</label><input type="text" value="${escHtml(node.module_type)}" readonly></div>
+      <div class="field"><label>Status</label><input type="text" value="Compiler-supported" readonly></div>
+    </div>`;
+}
+
+function vccUpdateGreetingFromInspector() {
+  const plan = readIvrBuildPlan();
+  plan.greeting.prompt_name = document.getElementById("vcc-field-prompt").value.trim();
+  plan.greeting.text = document.getElementById("vcc-field-greeting-text").value.trim();
+  writeIvrBuildPlan(plan);
+  vccRefreshFromBuildPlan();
+}
+
+function vccUpdateMenuNameFromInspector() {
+  const plan = readIvrBuildPlan();
+  plan.menu.name = document.getElementById("vcc-field-menu-name").value.trim();
+  writeIvrBuildPlan(plan);
+  vccRefreshFromBuildPlan();
+}
+
+function vccUpdateTransferFromInspector(index) {
+  if (index < 0) return;
+  const plan = readIvrBuildPlan();
+  plan.menu.options[index] = {
+    digit: document.getElementById("vcc-field-digit").value.trim(),
+    label: document.getElementById("vcc-field-label").value.trim(),
+    transfer_type: document.getElementById("vcc-field-transfer-type").value,
+    target: document.getElementById("vcc-field-target").value.trim()
+  };
+  writeIvrBuildPlan(plan);
+  vccIvrState.selectedNodeId = `transfer_${plan.menu.options[index].digit}`;
+  vccRefreshFromBuildPlan();
+}
+
+function vccRemoveTransfer(index) {
+  const plan = readIvrBuildPlan();
+  plan.menu.options.splice(index, 1);
+  writeIvrBuildPlan(plan);
+  vccIvrState.selectedNodeId = "menu";
+  vccRefreshFromBuildPlan();
+}
+
+function vccUpdateCustomNode(nodeId) {
+  const node = vccIvrState.customNodes.find(item => item.id === nodeId);
+  if (!node) return;
+  node.label = document.getElementById("vcc-custom-label").value.trim() || node.module_type;
+  try {
+    node.config = JSON.parse(document.getElementById("vcc-custom-config").value || "{}");
+  } catch (e) {
+    document.getElementById("ib-vcc-status-text").textContent = `Invalid config JSON: ${e.message}`;
+    return;
+  }
+  vccRenderVisual();
+}
+
+function vccRemoveCustomNode(nodeId) {
+  vccIvrState.customNodes = vccIvrState.customNodes.filter(node => node.id !== nodeId);
+  vccIvrState.canvasEdges = vccIvrState.canvasEdges.filter(edge => (edge.from || edge.source) !== nodeId && (edge.to || edge.target) !== nodeId);
+  vccIvrState.selectedNodeId = "menu";
+  vccRenderVisual();
+}
+
+function vccRemoveSelectedReferenceNode() {
+  vccIvrState.referenceNodes = vccIvrState.referenceNodes.filter(node => node.id !== vccIvrState.selectedNodeId);
+  vccIvrState.selectedNodeId = "menu";
+  vccRenderVisual();
+}
+
+function vccResetIvrBuilder() {
+  if (!vccIvrState.hasWorkspace) {
+    vccRenderStartScreen();
+    return;
+  }
+  if (vccIvrState.importedMode) {
+    vccIvrState.importedMode = false;
+    vccIvrState.hasWorkspace = false;
+    vccIvrState.referenceNodes = [];
+    vccIvrState.customNodes = [];
+    vccIvrState.canvasEdges = [];
+    vccIvrState.latestCompile = null;
+    vccIvrState.visual = null;
+    writeIvrBuildPlan(JSON.parse(JSON.stringify(BLANK_IVR_BUILD_PLAN)));
+    document.getElementById("ib-xml-output").value = "";
+    vccRenderStartScreen();
+    return;
+  }
+  vccIvrState.referenceNodes = [];
+  vccIvrState.customNodes = [];
+  vccIvrState.canvasEdges = [];
+  vccIvrState.latestCompile = null;
+  vccIvrState.selectedNodeId = "menu";
+  writeIvrBuildPlan(JSON.parse(JSON.stringify(BLANK_IVR_BUILD_PLAN)));
+  document.getElementById("ib-xml-output").value = "";
+  vccRefreshFromBuildPlan();
+}
+
+function vccImportIvrFile(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      vccShowImportedIvrXml(String(reader.result || ""), file.name);
+    } catch (e) {
+      showIvrBuilderError(e.message);
+    }
+  };
+  reader.onerror = () => showIvrBuilderError("Could not read IVR export file.");
+  reader.readAsText(file);
+}
+
+function vccShowImportedIvrXml(xmlText, fileName) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, "text/xml");
+  if (doc.querySelector("parsererror")) {
+    throw new Error("Imported file is not valid XML.");
+  }
+  const root = doc.documentElement;
+  if (!root || root.tagName !== "ivrScript") {
+    throw new Error("Expected a Five9 <ivrScript> export.");
+  }
+  const moduleElements = [...(root.querySelector("modules")?.children || [])];
+  const catalog = new Map(vccIvrState.palette.map(item => [item.module_type, item]));
+  const nodes = moduleElements.map((module, index) => {
+    const moduleId = module.querySelector(":scope > moduleId")?.textContent?.trim() || `${module.tagName}_${index}`;
+    const moduleName = module.querySelector(":scope > moduleName")?.textContent?.trim() || module.tagName;
+    const typeInfo = catalog.get(module.tagName) || {};
+    return {
+      id: moduleId,
+      module_id: moduleId,
+      module_type: module.tagName,
+      label: moduleName,
+      subtitle: module.tagName,
+      x: Number(module.querySelector(":scope > locationX")?.textContent || (80 + (index % 5) * 170)),
+      y: Number(module.querySelector(":scope > locationY")?.textContent || (80 + Math.floor(index / 5) * 110)),
+      unsupported: typeInfo.generation_status !== "supported_v1",
+      locked: true
+    };
+  });
+  const moduleById = new Set(nodes.map(node => node.id));
+  const edges = [];
+  for (const module of moduleElements) {
+    const from = module.querySelector(":scope > moduleId")?.textContent?.trim();
+    if (!from) continue;
+    const single = module.querySelector(":scope > singleDescendant")?.textContent?.trim();
+    if (single && moduleById.has(single)) {
+      edges.push({ id: `edge_${from}_${single}`, from, to: single, label: "" });
+    }
+    const exceptional = module.querySelector(":scope > exceptionalDescendant")?.textContent?.trim();
+    if (exceptional && moduleById.has(exceptional)) {
+      edges.push({ id: `edge_${from}_${exceptional}_exception`, from, to: exceptional, label: "Exception" });
+    }
+    for (const entry of [...module.querySelectorAll(":scope > data > branches > entry")]) {
+      const label = entry.querySelector(":scope > key")?.textContent?.trim() || "";
+      const target = entry.querySelector(":scope > value > desc")?.textContent?.trim() || "";
+      if (target && moduleById.has(target)) {
+        edges.push({ id: `edge_${from}_${target}_${label.replace(/[^a-z0-9]+/gi, "_")}`, from, to: target, label });
+      }
+    }
+  }
+  vccIvrState.hasWorkspace = true;
+  vccIvrState.importedMode = true;
+  vccIvrState.referenceNodes = [];
+  vccIvrState.customNodes = [];
+  vccIvrState.canvasEdges = [];
+  vccIvrState.latestCompile = null;
+  vccIvrState.selectedNodeId = nodes[0]?.id || "menu";
+  vccIvrState.visual = {
+    build_plan_schema: "imported_five9ivr_view",
+    valid: false,
+    errors: ["Imported script is view-only until rebuilt as a supported compiler plan."],
+    warnings: [],
+    nodes,
+    edges,
+    palette: vccIvrState.palette,
+    required_preflight_objects: {}
+  };
+  writeIvrBuildPlan({
+    imported_script_name: fileName,
+    mode: "view_only_import",
+    module_count: nodes.length,
+    edge_count: edges.length
+  });
+  document.getElementById("ib-xml-output").value = xmlText;
+  vccRenderVisual();
+}
+
+function vccShowBottomTab(tab) {
+  vccIvrState.bottomTab = tab;
+  ["plan", "xml", "deploy"].forEach(name => {
+    document.getElementById(`ib-tab-${name}-panel`).classList.toggle("active", name === tab);
+    document.getElementById(`ib-panel-${name}`).classList.toggle("active", name === tab);
+  });
+}
+
+function vccCanvasPayload() {
+  return vccBuildCanvasFromUi();
+}
+
+function vccBuildCanvasFromUi() {
+  if (vccIvrState.importedMode) {
+    return {
+      schema: "five9_ivr_canvas_v1",
+      view_only: true,
+      script_name: "Imported Five9 IVR",
+      nodes: ((vccIvrState.visual || {}).nodes || []).map(node => ({
+        id: node.id,
+        module_type: node.module_type,
+        label: node.label,
+        position: { x: Number(node.x) || 0, y: Number(node.y) || 0 },
+        config: {}
+      })),
+      edges: ((vccIvrState.visual || {}).edges || []).map(edge => ({
+        id: edge.id,
+        source: edge.from || edge.source,
+        target: edge.to || edge.target,
+        label: edge.label || ""
+      }))
+    };
+  }
+  const plan = readIvrBuildPlan();
+  const visualNodes = ((vccIvrState.visual || {}).nodes || []).map(node => vccCanvasNodeFromVisualNode(node, plan));
+  const customNodes = vccIvrState.customNodes.map(node => ({
+    id: node.id,
+    module_type: node.module_type,
+    label: node.label,
+    position: { x: Number(node.x) || 0, y: Number(node.y) || 0 },
+    config: node.config || {}
+  }));
+  const edges = [...(((vccIvrState.visual || {}).edges) || []), ...vccIvrState.canvasEdges].map(edge => ({
+    id: edge.id,
+    source: edge.from || edge.source,
+    target: edge.to || edge.target,
+    label: edge.label || ""
+  }));
+  return {
+    schema: "five9_ivr_canvas_v1",
+    script_name: plan.script_name,
+    description: plan.description || "",
+    nodes: [...visualNodes, ...customNodes],
+    edges
+  };
+}
+
+function vccCanvasNodeFromVisualNode(node, plan) {
+  let config = {};
+  if (node.id === "greeting") {
+    config = { prompt_name: plan.greeting?.prompt_name || "Greeting", text: plan.greeting?.text || "" };
+  } else if (node.id === "menu") {
+    config = { name: plan.menu?.name || "Main Menu" };
+  } else if (node.id.startsWith("transfer_")) {
+    const digit = node.digit || node.id.replace("transfer_", "");
+    const option = (plan.menu?.options || []).find(item => String(item.digit) === String(digit)) || {};
+    config = { target: option.target || node.target || node.label, digit, label: option.label || node.label };
+  }
+  return {
+    id: node.id,
+    module_type: node.module_type,
+    label: node.label,
+    position: { x: Number(node.x) || 0, y: Number(node.y) || 0 },
+    config
+  };
+}
+
+function vccHasUnsupportedMainFlowBlocks() {
+  return vccIvrState.referenceNodes.some(node => node.zone !== "reference");
+}
+
+function vccDefaultNodeConfig(moduleType) {
+  const defaults = {
+    getDigits: { targetVariableName: "digits", numberOfDigits: 1 },
+    setVariable: { variableName: "callerType", value: "member" },
+    ifElse: { condition: "true" },
+    case: { condition: "default" },
+    query: { method: "GET", url: "https://example.com/five9-query" },
+    foreignScript: { ivrScript: "Referenced Script" },
+    voiceMailTransfer: { target: "Voice Mail" },
+    thirdPartyTransfer: { target: "15555550100", destination: "15555550100" },
+    agentTransfer: { target: "Agent" },
+    extensionTransfer: { target: "1000" },
+    ivaTransfer: { target: "IVA" },
+    input: { targetVariableName: "input" },
+    language: { language: "en-US" },
+    recording: { varToAccessRecording: "recordingUrl" },
+    iterator: { collection: "items" },
+    lookupCRMRecord: { lookupCriteria: "ANI" },
+    crmUpdate: { mode: "UPDATE" },
+    systemInfo: { systemInfoType: "CALL" },
+    systemUpdate: { objectToModify: "CALL" },
+    setDNC: { targetVariableName: "ani" },
+    answerMachine: { condition: "live" },
+    conference: { destination: "15555550100" }
+  };
+  return JSON.parse(JSON.stringify(defaults[moduleType] || {}));
+}
+
+function vccModuleIcon(moduleType) {
+  const icons = {
+    incomingCall: "⚙",
+    play: "▶",
+    menu: "✓",
+    skillTransfer: "👥",
+    campaignTransfer: "☎",
+    agentTransfer: "👤",
+    thirdPartyTransfer: "➜",
+    extensionTransfer: "➜",
+    voiceMailTransfer: "✉",
+    voicemailTransfer: "✉",
+    hangup: "☎",
+    query: "🌐",
+    ifElse: "⤴",
+    case: "⌘",
+    setVariable: "▦",
+    input: "☑",
+    getDigits: "#",
+    foreignScript: "◇",
+    language: "✓",
+    conference: "☎",
+    recording: "●",
+    systemInfo: "?",
+    systemUpdate: "⇅"
+  };
+  return icons[moduleType] || "□";
+}
+
+async function runIvrBuilderValidate() {
+  if (vccIvrState.importedMode) {
+    showIvrBuilderError("Imported scripts are view-only. Start a blank compiler-backed script to validate or deploy.");
+    return;
+  }
+  try {
+    const res = await fetch("/api/run/five9/ivr-builder/validate-canvas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ canvas: vccCanvasPayload() })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    if (vccHasUnsupportedMainFlowBlocks()) {
+      data.valid = false;
+      data.errors = [...(data.errors || []), "Unsupported reference module in Main Flow blocks compile."];
+    }
+    showIvrBuilderData("VCC Canvas Validation", data);
+  } catch (e) {
+    showIvrBuilderError(e.message);
+  }
+}
+
+async function runIvrBuilderCompile() {
+  if (vccIvrState.importedMode) {
+    showIvrBuilderError("Imported scripts are view-only. Rebuild the flow as a supported compiler plan before compiling.");
+    return;
+  }
+  if (!vccIvrState.hasWorkspace) {
+    showIvrBuilderError("Start a blank script or load a sample before compiling.");
+    return;
+  }
+  if (vccHasUnsupportedMainFlowBlocks()) {
+    showIvrBuilderError("Compile blocked: remove unsupported reference modules from Main Flow before generating Five9 XML.");
+    vccShowBottomTab("xml");
+    return;
+  }
+  try {
+    const data = await postIvrBuilderJson(
+      "/api/run/five9/ivr-builder/compile-canvas",
+      { canvas: vccBuildCanvasFromUi() },
+      "Compiled Five9 IVR XML"
+    );
+    vccIvrState.latestCompile = data;
+    if (data.xmlDefinition) {
+      document.getElementById("ib-xml-output").value = data.xmlDefinition;
+      vccShowBottomTab("xml");
+    }
+    if (data.deployable === false) {
+      showIvrBuilderData("Compiled XML - Certification Required", data);
+    }
+  } catch (e) {
+    showIvrBuilderError(e.message);
+  }
+}
+
+async function runIvrBuilderDeploy() {
+  if (vccIvrState.importedMode) {
+    showIvrBuilderError("Imported scripts are view-only and cannot be deployed by the compiler.");
+    return;
+  }
+  if (!vccIvrState.hasWorkspace) {
+    showIvrBuilderError("Start a blank script or load a sample before deploy.");
+    return;
+  }
+  if (vccHasUnsupportedMainFlowBlocks()) {
+    showIvrBuilderError("Deploy blocked: unsupported reference modules cannot be deployed by the V1 compiler.");
+    return;
+  }
+  let plan;
+  try {
+    plan = readIvrBuildPlan();
+  } catch (e) {
+    showIvrBuilderError(`Invalid build plan JSON: ${e.message}`);
+    return;
+  }
+  const xml = document.getElementById("ib-xml-output").value.trim();
+  if (!xml) {
+    showIvrBuilderError("Compile XML before deploy.");
+    vccShowBottomTab("xml");
+    return;
+  }
+  if (vccIvrState.latestCompile && vccIvrState.latestCompile.deployable === false) {
+    showIvrBuilderError("Deploy blocked: this XML contains compiler-candidate modules that need live certification first.");
+    vccShowBottomTab("deploy");
+    return;
+  }
+  const payload = {
+    mode: ivrBuilderMode,
+    approved: document.getElementById("ib-approved").checked,
+    domain: document.getElementById("ib-domain").value,
+    username: document.getElementById("ib-username").value.trim(),
+    password: document.getElementById("ib-password").value,
+    script_name: plan.script_name,
+    description: plan.description || "",
+    xml_definition: xml
+  };
+  const data = await postIvrBuilderJson("/api/run/five9/ivr-builder/deploy", payload, "IVR Builder Deploy");
+  if (data.results) {
+    renderIvrScriptResults(document.getElementById("results-area"), data);
+  }
+}
+
+async function runIvrBuilderCertification(mode) {
+  const moduleTypes = document.getElementById("ib-cert-modules").value
+    .split(",")
+    .map(value => value.trim())
+    .filter(Boolean);
+  const payload = {
+    mode,
+    approved: mode === "live" ? document.getElementById("ib-approved").checked : false,
+    domain: document.getElementById("ib-domain").value,
+    username: document.getElementById("ib-username").value.trim(),
+    password: document.getElementById("ib-password").value,
+    module_types: moduleTypes.length ? moduleTypes : null,
+    target_script_name: document.getElementById("ib-cert-target").value.trim() || "ZZ_TEST_Codex_IVR_ModuleLab"
+  };
+  const data = await postIvrBuilderJson("/api/run/five9/ivr-builder/certify", payload, "IVR Module Certification");
+  if (data.results) {
+    showIvrBuilderData("IVR Module Certification", data);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Five9 Modify Config - form
+// ---------------------------------------------------------------------------
+let modifyMode = "dry_run";
+
+const SAMPLE_MODIFY_PLAN = [
+  { tool_name: "five9_modify_skill", params: { skill_name: "ZZ_TEST_Codex_DeleteMe", description: "Updated by Codex" } },
+  { tool_name: "five9_modify_prompt_tts", params: { prompt_name: "ZZ_TEST_Codex_Greeting", text: "Updated greeting." } }
+];
+
+function renderFive9ModifyForm(container, tool) {
+  container.innerHTML = `
+    <form id="modify-form" onsubmit="return false">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="md-tab-dry" onclick="setModifyMode('dry_run')">Dry Run Plan</button>
+        <button type="button" class="mode-tab" id="md-tab-live" onclick="setModifyMode('live')">Live Five9 Modify</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Planned Modify Calls</div>
+        <div class="alert warning">Live mode changes existing Five9 configuration. Run preflight first, review the exact targets, then approve explicitly.</div>
+        <div class="field">
+          <label>Approved Five9 modify plan JSON</label>
+          <textarea id="md-plan" rows="14">${escHtml(JSON.stringify(SAMPLE_MODIFY_PLAN, null, 2))}</textarea>
+          <span class="hint">Only allowed Modify Pack tool names are accepted. Unknown, malformed, or unapproved live calls are rejected by the backend.</span>
+        </div>
+      </div>
+
+      <div class="card" id="md-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="md-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="md-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="md-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="md-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="md-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="md-approved">
+          <span>I approve these live Five9 modify calls exactly as shown.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.modify_config')">
+          Run Modify
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("md-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "md");
+  });
+  setModifyMode("dry_run");
+}
+
+function setModifyMode(mode) {
+  modifyMode = mode;
+  document.getElementById("md-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("md-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("md-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("md-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "dry_run") {
+    document.getElementById("md-approved").checked = false;
+  }
+  clearResults();
+}
+
+function collectFive9ModifyForm() {
+  let plannedCalls;
+  try {
+    plannedCalls = JSON.parse(document.getElementById("md-plan").value);
+  } catch (e) {
+    plannedCalls = [{ tool_name: "__invalid_json__", params: { error: e.message } }];
+  }
+  return {
+    mode: modifyMode,
+    approved: document.getElementById("md-approved").checked,
+    domain: document.getElementById("md-domain").value,
+    username: document.getElementById("md-username").value.trim(),
+    password: document.getElementById("md-password").value,
+    planned_calls: plannedCalls,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Five9 Rollback Deletes - form
+// ---------------------------------------------------------------------------
+let rollbackMode = "dry_run";
+
+const SAMPLE_ROLLBACK_PLAN = [
+  { tool_name: "five9_delete_skill", params: { skill_name: "ZZ_TEST_Codex_DeleteMe" } }
+];
+
+function renderFive9RollbackForm(container, tool) {
+  container.innerHTML = `
+    <form id="rollback-form" onsubmit="return false">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" id="rb-tab-dry" onclick="setRollbackMode('dry_run')">Dry Run Plan</button>
+        <button type="button" class="mode-tab" id="rb-tab-live" onclick="setRollbackMode('live')">Live Five9 Delete</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Planned Delete / Remove Calls</div>
+        <div class="alert warning">Live mode deletes or removes Five9 configuration. Use this only for approved rollback of known disposable objects.</div>
+        <div class="field">
+          <label>Approved Five9 rollback plan JSON</label>
+          <textarea id="rb-plan" rows="14">${escHtml(JSON.stringify(SAMPLE_ROLLBACK_PLAN, null, 2))}</textarea>
+          <span class="hint">Only allowed Rollback/Delete Pack tool names are accepted. Unknown, malformed, or unapproved live calls are rejected by the backend.</span>
+        </div>
+      </div>
+
+      <div class="card" id="rb-live-card" style="display:none">
+        <div class="cred-header">
+          <div class="card-title" style="margin:0">Live Five9 Credentials</div>
+          <button type="button" class="btn-link" id="rb-load-creds-btn">Load from .env</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Domain</label>
+            <select id="rb-domain">
+              <option value="api.five9.com">api.five9.com (US)</option>
+              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.ca">api.five9.ca (CA)</option>
+              <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="rb-username" placeholder="user@domain.com" autocomplete="username">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="rb-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="rb-approval-card" style="display:none">
+        <div class="card-title">Approval Gate</div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="rb-approved">
+          <span>I approve these live Five9 delete/remove calls exactly as shown.</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="run-btn" onclick="runTool('five9.rollback_deletes')">
+          Run Rollback
+        </button>
+        <button type="button" class="btn-secondary" onclick="clearResults()">Clear</button>
+      </div>
+    </form>`;
+
+  document.getElementById("rb-load-creds-btn").addEventListener("click", () => {
+    loadCredentials(tool.credentialsEndpoint, "rb");
+  });
+  setRollbackMode("dry_run");
+}
+
+function setRollbackMode(mode) {
+  rollbackMode = mode;
+  document.getElementById("rb-tab-dry").classList.toggle("active", mode === "dry_run");
+  document.getElementById("rb-tab-live").classList.toggle("active", mode === "live");
+  document.getElementById("rb-live-card").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("rb-approval-card").style.display = mode === "live" ? "block" : "none";
+  if (mode === "dry_run") {
+    document.getElementById("rb-approved").checked = false;
+  }
+  clearResults();
+}
+
+function collectFive9RollbackForm() {
+  let plannedCalls;
+  try {
+    plannedCalls = JSON.parse(document.getElementById("rb-plan").value);
+  } catch (e) {
+    plannedCalls = [{ tool_name: "__invalid_json__", params: { error: e.message } }];
+  }
+  return {
+    mode: rollbackMode,
+    approved: document.getElementById("rb-approved").checked,
+    domain: document.getElementById("rb-domain").value,
+    username: document.getElementById("rb-username").value.trim(),
+    password: document.getElementById("rb-password").value,
+    planned_calls: plannedCalls,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Load credentials from server .env
 // ---------------------------------------------------------------------------
-async function loadCredentials(endpoint) {
-  const btn = document.getElementById("load-creds-btn");
+async function readApiResponse(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return { detail: text || res.statusText };
+  }
+}
+
+async function loadCredentials(endpoint, prefix = "f") {
+  const btnId = prefix === "pf" ? "pf-load-creds-btn" : prefix === "pb-preflight" ? "pb-preflight-load-creds-btn" : prefix === "cw" ? "cw-load-creds-btn" : prefix === "md" ? "md-load-creds-btn" : prefix === "rb" ? "rb-load-creds-btn" : prefix === "iv" ? "iv-load-creds-btn" : prefix === "ib" ? "ib-load-creds-btn" : "load-creds-btn";
+  const btn = document.getElementById(btnId);
   btn.textContent = "Loading...";
   btn.disabled = true;
   try {
     const res = await fetch(endpoint);
-    const data = await res.json();
-    if (data.username) document.getElementById("f-username").value = data.username;
-    if (data.password) document.getElementById("f-password").value = data.password;
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    if (data.username) document.getElementById(`${prefix}-username`).value = data.username;
+    if (data.password) document.getElementById(`${prefix}-password`).value = data.password;
     if (data.domain) {
-      const sel = document.getElementById("f-domain");
+      const sel = document.getElementById(`${prefix}-domain`);
       const opt = [...sel.options].find(o => o.value === data.domain);
       if (opt) sel.value = data.domain;
     }
@@ -687,6 +4059,7 @@ async function runTool(toolId) {
   const payload = tool.collect();
   const resultsArea = document.getElementById("results-area");
   const runBtn = document.getElementById("run-btn");
+  const idleLabel = tool.buttonLabel || "Run";
 
   runBtn.disabled = true;
   runBtn.innerHTML = `<span class="spinner"></span> Running...`;
@@ -696,25 +4069,31 @@ async function runTool(toolId) {
   delete payload._endpoint;
 
   try {
+    const isFormData = payload instanceof FormData;
     const res = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: isFormData ? undefined : { "Content-Type": "application/json" },
+      body: isFormData ? payload : JSON.stringify(payload),
     });
 
-    const data = await res.json();
+    const data = await readApiResponse(res);
 
     if (!res.ok) {
       resultsArea.innerHTML = `<div class="alert error">Error: ${data.detail || res.statusText}</div>`;
       return;
     }
 
-    renderResults(resultsArea, data, payload.dry_run);
+    const renderer = tool.renderResults || renderResults;
+    renderer(resultsArea, data, payload.dry_run);
   } catch (e) {
     resultsArea.innerHTML = `<div class="alert error">Network error: ${e.message}</div>`;
   } finally {
+    if (toolId === "five9.playbook_agent") {
+      const keyInput = document.getElementById("pb-api-key");
+      if (keyInput) keyInput.value = "";
+    }
     runBtn.disabled = false;
-    runBtn.innerHTML = "Run Upload";
+    runBtn.innerHTML = idleLabel;
   }
 }
 
@@ -777,6 +4156,272 @@ function renderResults(container, data, isDryRun) {
     </div>`;
 
   container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderPreflightResults(container, data) {
+  const { results, summary } = data;
+  const totalObjects = results.reduce((total, result) => total + (Array.isArray(result.data) ? result.data.length : 0), 0);
+  const failed = summary.failed || results.filter(result => result.result === "failed").length;
+  const alertClass = failed > 0 ? "warning" : "success";
+  const alertMsg = failed > 0
+    ? `${summary.total} read operation(s) completed in ${escHtml(summary.mode)} mode. ${failed} failed; ${totalObjects} object(s) returned.`
+    : `${summary.total} read operation(s) completed in ${escHtml(summary.mode)} mode. ${totalObjects} object(s) returned.`;
+  const rowsHtml = results.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.result === "failed" ? "failed" : result.mode === "live" ? "created" : "dry-run"}">${escHtml(result.result === "failed" ? "failed" : result.mode)}</span></td>
+      <td>${Array.isArray(result.data) ? result.data.length : 0}</td>
+      <td>${escHtml(result.timestamp)}</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        ${result.error ? `<div class="alert error" style="margin-bottom:8px">${escHtml(result.error)}</div>` : ""}
+        <pre class="preflight-data">${escHtml(JSON.stringify(result.data, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Preflight Results</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      <div class="summary-pills">
+        <span class="pill total">${summary.total} reads</span>
+        ${failed ? `<span class="pill failed">${failed} failed</span>` : ""}
+        <span class="pill ${summary.live ? "created" : "skipped"}">${escHtml(summary.mode)} mode</span>
+        <span class="pill total">${totalObjects} objects</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Target</th>
+            <th>Mode</th>
+            <th>Objects</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderCoreWriteResults(container, data) {
+  const { results, summary } = data;
+  const failed = summary.failed || results.filter(result => result.result === "failed").length;
+  const alertClass = failed > 0 ? "warning" : summary.live ? "success" : "success";
+  const alertMsg = failed > 0
+    ? `${summary.total} write operation(s) processed in ${escHtml(summary.mode)} mode. ${failed} failed.`
+    : summary.live
+      ? `${summary.total} approved Five9 write operation(s) completed.`
+      : `${summary.total} Five9 write operation(s) planned. No live changes were made.`;
+  const rowsHtml = results.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.result === "failed" ? "failed" : result.result === "success" ? "created" : "dry-run"}">${escHtml(result.result)}</span></td>
+      <td>${escHtml(result.timestamp)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        ${result.error ? `<div class="alert error" style="margin-bottom:8px">${escHtml(result.error)}</div>` : ""}
+        <pre class="preflight-data">${escHtml(JSON.stringify(result.data, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Core Write Results</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      <div class="summary-pills">
+        <span class="pill total">${summary.total} writes</span>
+        ${failed ? `<span class="pill failed">${failed} failed</span>` : ""}
+        <span class="pill ${summary.live ? "created" : "skipped"}">${escHtml(summary.mode)} mode</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Target</th>
+            <th>Result</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderModifyResults(container, data) {
+  const { results, summary } = data;
+  const failed = summary.failed || results.filter(result => result.result === "failed").length;
+  const alertClass = failed > 0 ? "warning" : "success";
+  const alertMsg = failed > 0
+    ? `${summary.total} modify operation(s) processed in ${escHtml(summary.mode)} mode. ${failed} failed.`
+    : summary.live
+      ? `${summary.total} approved Five9 modify operation(s) completed.`
+      : `${summary.total} Five9 modify operation(s) planned. No live changes were made.`;
+  const rowsHtml = results.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.result === "failed" ? "failed" : result.result === "success" ? "updated" : "dry-run"}">${escHtml(result.result)}</span></td>
+      <td>${escHtml(result.timestamp)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        ${result.error ? `<div class="alert error" style="margin-bottom:8px">${escHtml(result.error)}</div>` : ""}
+        <pre class="preflight-data">${escHtml(JSON.stringify(result.data, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Modify Results</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      <div class="summary-pills">
+        <span class="pill total">${summary.total} modify calls</span>
+        ${failed ? `<span class="pill failed">${failed} failed</span>` : ""}
+        <span class="pill ${summary.live ? "updated" : "skipped"}">${escHtml(summary.mode)} mode</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Target</th>
+            <th>Result</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderRollbackResults(container, data) {
+  const { results, summary } = data;
+  const failed = summary.failed || results.filter(result => result.result === "failed").length;
+  const alertClass = failed > 0 ? "warning" : "success";
+  const alertMsg = failed > 0
+    ? `${summary.total} rollback operation(s) processed in ${escHtml(summary.mode)} mode. ${failed} failed.`
+    : summary.live
+      ? `${summary.total} approved Five9 rollback operation(s) completed.`
+      : `${summary.total} Five9 rollback operation(s) planned. No live changes were made.`;
+  const rowsHtml = results.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.result === "failed" ? "failed" : result.result === "success" ? "created" : "dry-run"}">${escHtml(result.result)}</span></td>
+      <td>${escHtml(result.timestamp)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        ${result.error ? `<div class="alert error" style="margin-bottom:8px">${escHtml(result.error)}</div>` : ""}
+        <pre class="preflight-data">${escHtml(JSON.stringify(result.data, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">Rollback Results</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      <div class="summary-pills">
+        <span class="pill total">${summary.total} rollback calls</span>
+        ${failed ? `<span class="pill failed">${failed} failed</span>` : ""}
+        <span class="pill ${summary.live ? "created" : "skipped"}">${escHtml(summary.mode)} mode</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Target</th>
+            <th>Result</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderIvrScriptResults(container, data) {
+  const { results, summary } = data;
+  const failed = summary.failed || results.filter(result => result.result === "failed").length;
+  const objectCount = results.reduce((total, result) => total + (Array.isArray(result.data) ? result.data.length : 0), 0);
+  const alertClass = failed > 0 ? "warning" : "success";
+  const alertMsg = failed > 0
+    ? `${summary.total} IVR script operation(s) processed in ${escHtml(summary.mode)} mode. ${failed} failed.`
+    : summary.live
+      ? `${summary.total} approved Five9 IVR script operation(s) completed.`
+      : `${summary.total} Five9 IVR script operation(s) planned or read in dry_run mode. No live changes were made.`;
+  const rowsHtml = results.map(result => `
+    <tr>
+      <td><span class="tool-name">${escHtml(result.tool_name)}</span></td>
+      <td>${escHtml(formatPreflightContext(result))}</td>
+      <td><span class="action-badge ${result.result === "failed" ? "failed" : result.result === "success" ? "created" : "dry-run"}">${escHtml(result.result)}</span></td>
+      <td>${escHtml(result.timestamp)}</td>
+    </tr>
+    <tr>
+      <td colspan="4">
+        ${result.error ? `<div class="alert error" style="margin-bottom:8px">${escHtml(result.error)}</div>` : ""}
+        <pre class="preflight-data">${escHtml(JSON.stringify(result.data, null, 2))}</pre>
+      </td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="card results-card visible" style="margin-top:16px">
+      <div class="card-title">IVR Script Results</div>
+      <div class="alert ${alertClass}">${alertMsg}</div>
+      <div class="summary-pills">
+        <span class="pill total">${summary.total} IVR calls</span>
+        ${failed ? `<span class="pill failed">${failed} failed</span>` : ""}
+        <span class="pill ${summary.live ? "created" : "skipped"}">${escHtml(summary.mode)} mode</span>
+        ${objectCount ? `<span class="pill total">${objectCount} script objects</span>` : ""}
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Target</th>
+            <th>Result</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function formatPreflightContext(result) {
+  const params = result && result.params ? result.params : {};
+  if (params.skill_name) return `skill_name: ${params.skill_name}`;
+  if (params.disposition_name) return `disposition_name: ${params.disposition_name}`;
+  if (params.campaign_name) return `campaign_name: ${params.campaign_name}`;
+  if (params.prompt_name) return `prompt_name: ${params.prompt_name}`;
+  if (params.dnis) return `dnis: ${Array.isArray(params.dnis) ? params.dnis.join(", ") : params.dnis}`;
+  if (params.skills) return `skills: ${Array.isArray(params.skills) ? params.skills.join(", ") : params.skills}`;
+  if (params.dispositions) return `dispositions: ${Array.isArray(params.dispositions) ? params.dispositions.join(", ") : params.dispositions}`;
+  if (params.name) return `name: ${params.name}`;
+  if (params.name_pattern) return `name_pattern: ${params.name_pattern}`;
+  if (params.xml_definition) return "xml_definition: provided";
+  if (params.campaign_type) return `campaign_type: ${params.campaign_type}`;
+  if (params.select_unassigned) return "select_unassigned: true";
+  return "all";
 }
 
 function escHtml(str) {

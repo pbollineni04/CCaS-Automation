@@ -20,6 +20,10 @@ id_rsa*
 # Logs
 *.log
 
+# Generated artifacts
+outputs/
+evals/reports/
+
 # Local tooling
 .venv/
 venv/
