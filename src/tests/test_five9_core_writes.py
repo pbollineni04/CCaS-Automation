@@ -47,6 +47,14 @@ class FakeWriteClient:
         return {"set": "default_ivr_schedule", **params}
 
 
+class FailFirstDispositionClient(FakeWriteClient):
+    def create_disposition(self, **params):
+        self.calls.append(("create_disposition", params))
+        if params["name"] == "TEST":
+            raise RuntimeError("Five9 rejected TEST")
+        return {"created": "disposition", **params}
+
+
 class Five9CoreWriteToolTests(unittest.TestCase):
     def setUp(self):
         self.core_writes = importlib.import_module("src.tools.Five9.core_writes")
@@ -168,6 +176,29 @@ class Five9CoreWriteToolTests(unittest.TestCase):
         self.assertEqual([result["tool_name"] for result in results], [call["tool_name"] for call in plan])
         self.assertTrue(all(result["mode"] == "dry_run" for result in results))
         self.assertTrue(all(result["result"] == "planned" for result in results))
+
+    def test_live_batch_continues_after_one_write_fails(self):
+        client = FailFirstDispositionClient()
+        plan = [
+            {"tool_name": "five9_create_disposition", "params": {"name": "TEST"}},
+            {"tool_name": "five9_create_disposition", "params": {"name": "Customer Hung Up"}},
+        ]
+
+        results = self.core_writes.execute_core_write_plan(
+            approved=True,
+            planned_calls=plan,
+            mode="live",
+            client=client,
+        )
+
+        self.assertEqual([result["result"] for result in results], ["failed", "success"])
+        self.assertEqual(
+            client.calls,
+            [
+                ("create_disposition", {"name": "TEST"}),
+                ("create_disposition", {"name": "Customer Hung Up"}),
+            ],
+        )
 
 
 if __name__ == "__main__":

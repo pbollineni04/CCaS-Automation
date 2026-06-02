@@ -65,7 +65,7 @@ def execute_core_write_plan(
                 error=str(e),
             )
             results.append(result)
-            break
+            continue
 
         results.append(result)
 
