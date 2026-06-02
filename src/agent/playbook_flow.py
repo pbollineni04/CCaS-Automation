@@ -7,6 +7,8 @@ from typing import Any, Iterable, Mapping
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
 
+from src.tools.Five9.common.write_common import normalize_five9_disposition_name
+
 
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -212,7 +214,7 @@ def build_core_write_plan(
         )
 
     for raw_disposition in entities["dispositions"]:
-        disposition = _clean_playbook_name(raw_disposition)
+        disposition = _clean_five9_disposition_name(raw_disposition)
         calls.append(
             {
                 "tool_name": "five9_create_disposition",
@@ -259,7 +261,10 @@ def build_core_write_plan(
                     "tool_name": "five9_add_dispositions_to_campaign",
                     "params": {
                         "campaign_name": campaign_name,
-                        "dispositions": campaign["dispositions"],
+                        "dispositions": [
+                            _clean_five9_disposition_name(disposition)
+                            for disposition in campaign["dispositions"]
+                        ],
                     },
                 }
             )
@@ -376,7 +381,7 @@ def _extract_dispositions(rows: list[list[str]]) -> list[str]:
     notes_col = headers.get("notes")
     values = []
     for row in rows[header_index + 1:]:
-        name = _clean_playbook_name(_cell(row, name_col))
+        name = _clean_five9_disposition_name(_cell(row, name_col))
         notes = _cell(row, notes_col) if notes_col is not None else ""
         if "system dispo" in notes.lower():
             continue
@@ -420,6 +425,11 @@ def _extract_inbound_campaigns(rows: list[list[str]]) -> list[dict[str, Any]]:
         dispositions = _split_names(_cell(row, headers.get("dispositions")))
         if dispositions == ["All"]:
             dispositions = []
+        else:
+            dispositions = [
+                _clean_five9_disposition_name(disposition)
+                for disposition in dispositions
+            ]
         campaigns.append(
             {
                 "campaign_name": name,
@@ -531,6 +541,11 @@ def _clean_playbook_name(value: str) -> str:
     if structured_name:
         return structured_name
     return str(value or "").strip()
+
+
+def _clean_five9_disposition_name(value: str) -> str:
+    name = _clean_playbook_name(value)
+    return normalize_five9_disposition_name(name) if name else ""
 
 
 def _structured_name_from_cell(value: str) -> str:

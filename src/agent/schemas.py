@@ -3,6 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Mapping
 
+from src.tools.Five9.common.write_common import normalize_five9_disposition_name
+
 
 SUPPORTED_PLATFORM = "five9"
 DEFERRED_IVR_MESSAGE = (
@@ -408,6 +410,10 @@ def _validate_tool_params(
     for name, expected_type in schema["optional"].items():
         if name in params:
             output[name] = _validate_param_value(params[name], expected_type, f"{path}.{name}")
+    if tool_name == "five9_create_disposition":
+        output["name"] = normalize_five9_disposition_name(output["name"])
+    elif tool_name == "five9_add_dispositions_to_campaign":
+        output["dispositions"] = _disposition_list(output["dispositions"], f"{path}.dispositions")
     return output
 
 
@@ -491,7 +497,7 @@ def validate_desired_config(value: Mapping[str, Any]) -> dict[str, Any]:
         "platform": SUPPORTED_PLATFORM,
         "client_name": client_name,
         "skills": _string_list(desired.get("skills", []), "skills"),
-        "dispositions": _string_list(desired.get("dispositions", []), "dispositions"),
+        "dispositions": _disposition_list(desired.get("dispositions", []), "dispositions"),
         "prompts": _prompt_list(desired.get("prompts", [])),
         "inbound_campaigns": _campaign_list(desired.get("inbound_campaigns", [])),
         "dnis": _dnis_list(desired.get("dnis", [])),
@@ -562,6 +568,11 @@ def _string_list(values: Any, field_name: str) -> list[str]:
     return output
 
 
+def _disposition_list(values: Any, field_name: str) -> list[str]:
+    dispositions = _string_list(values, field_name)
+    return list(dict.fromkeys(normalize_five9_disposition_name(value) for value in dispositions))
+
+
 def _prompt_list(values: Any) -> list[dict[str, str]]:
     if not isinstance(values, list):
         raise ValueError("prompts must be a list")
@@ -607,7 +618,7 @@ def _campaign_list(values: Any) -> list[dict[str, Any]]:
                 "campaign_name": name,
                 "description": description.strip() or None,
                 "skills": _string_list(item.get("skills", []), f"inbound_campaigns[{index}].skills"),
-                "dispositions": _string_list(
+                "dispositions": _disposition_list(
                     item.get("dispositions", []),
                     f"inbound_campaigns[{index}].dispositions",
                 ),

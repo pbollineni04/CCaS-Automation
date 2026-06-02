@@ -59,6 +59,8 @@ class Five9CoreWriteToolTests(unittest.TestCase):
     def setUp(self):
         self.core_writes = importlib.import_module("src.tools.Five9.core_writes")
         self.create_skill = importlib.import_module("src.tools.Five9.five9_create_skill")
+        self.create_disposition = importlib.import_module("src.tools.Five9.five9_create_disposition")
+        self.add_dispositions = importlib.import_module("src.tools.Five9.five9_add_dispositions_to_campaign")
 
     def test_dry_run_write_returns_planned_result_without_client(self):
         result = self.create_skill.five9_create_skill(
@@ -104,6 +106,20 @@ class Five9CoreWriteToolTests(unittest.TestCase):
         self.assertEqual(result["mode"], "live")
         self.assertEqual(result["result"], "success")
         self.assertEqual(client.calls, [("create_skill", {"name": "English", "description": "Language skill"})])
+
+    def test_disposition_tools_normalize_five9_invalid_name_characters(self):
+        created = self.create_disposition.five9_create_disposition(
+            name="Designer/Sales",
+            mode="dry_run",
+        )
+        assigned = self.add_dispositions.five9_add_dispositions_to_campaign(
+            campaign_name="Acme Main Inbound",
+            dispositions=["Designer/Sales", "Designer Sales"],
+            mode="dry_run",
+        )
+
+        self.assertEqual(created["params"]["name"], "Designer Sales")
+        self.assertEqual(assigned["params"]["dispositions"], ["Designer Sales"])
 
     def test_all_core_write_tool_names_are_allowed_in_order(self):
         self.assertEqual(

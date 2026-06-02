@@ -6,8 +6,8 @@ from ..common.write_common import (
     build_planned_write_result,
     build_write_result,
     clean_params,
+    normalize_five9_disposition_name,
     require_live_write,
-    require_text,
 )
 
 
@@ -25,7 +25,7 @@ def five9_create_disposition(
     approved: bool = False,
     client: Any | None = None,
 ) -> dict[str, Any]:
-    name = require_text(name, "name")
+    name = normalize_five9_disposition_name(name)
     params = clean_params(
         name=name,
         description=description,

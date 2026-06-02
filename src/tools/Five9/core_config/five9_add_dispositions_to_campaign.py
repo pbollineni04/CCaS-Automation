@@ -6,6 +6,7 @@ from ..common.write_common import (
     build_planned_write_result,
     build_write_result,
     clean_params,
+    normalize_five9_disposition_name,
     require_list,
     require_live_write,
     require_text,
@@ -25,7 +26,12 @@ def five9_add_dispositions_to_campaign(
     client: Any | None = None,
 ) -> dict[str, Any]:
     campaign_name = require_text(campaign_name, "campaign_name")
-    disposition_values = require_list(dispositions, "dispositions")
+    disposition_values = list(
+        dict.fromkeys(
+            normalize_five9_disposition_name(disposition)
+            for disposition in require_list(dispositions, "dispositions")
+        )
+    )
     params = clean_params(
         campaign_name=campaign_name,
         dispositions=disposition_values,

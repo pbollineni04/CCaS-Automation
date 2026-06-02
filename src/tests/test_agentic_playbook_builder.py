@@ -230,6 +230,25 @@ class AgenticPlaybookSchemaTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_planned_calls(planned_calls)
 
+    def test_api_ready_planned_calls_normalize_disposition_names(self):
+        from src.agent.schemas import validate_planned_calls
+
+        validated = validate_planned_calls(
+            [
+                {"tool_name": "five9_create_disposition", "params": {"name": "Designer/Sales"}},
+                {
+                    "tool_name": "five9_add_dispositions_to_campaign",
+                    "params": {
+                        "campaign_name": "Campaign",
+                        "dispositions": ["Designer/Sales", "Designer Sales"],
+                    },
+                },
+            ]
+        )
+
+        self.assertEqual(validated[0]["params"]["name"], "Designer Sales")
+        self.assertEqual(validated[1]["params"]["dispositions"], ["Designer Sales"])
+
     def test_ivr_requirements_validate_as_deferred_planning_only(self):
         from src.agent.schemas import validate_agent_plan_response, validate_ivr_requirements
 

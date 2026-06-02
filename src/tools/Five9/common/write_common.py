@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime
+import re
 from typing import Any, Mapping
 
 
@@ -76,6 +77,12 @@ def require_text(value: str | None, field_name: str) -> str:
     if value is None or not str(value).strip():
         raise ValueError(f"{field_name} is required")
     return str(value).strip()
+
+
+def normalize_five9_disposition_name(value: str | None) -> str:
+    name = require_text(value, "disposition_name")
+    normalized = re.sub(r"\s+", " ", re.sub(r"""[*~&%#!|"()^/\\<>;?{}+=]""", " ", name)).strip()
+    return require_text(normalized, "disposition_name")
 
 
 def require_list(values: list[str] | tuple[str, ...] | str | None, field_name: str) -> list[str]:

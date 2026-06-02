@@ -108,6 +108,22 @@ class PlaybookFlowTests(unittest.TestCase):
         )
         self.assertEqual(create_disposition["params"]["name"], "Appointment Reset - Rescheduled")
 
+    def test_disposition_cells_normalize_five9_invalid_name_characters(self):
+        from src.agent import playbook_flow
+
+        workbook = {
+            "Dispositions": [
+                ["Disposition Name", "Notes"],
+                ["Designer/Sales", ""],
+            ],
+        }
+
+        entities = playbook_flow.extract_five9_entities(workbook)
+        write_plan = playbook_flow.build_core_write_plan(entities)
+
+        self.assertEqual(entities["dispositions"], ["Designer Sales"])
+        self.assertEqual(write_plan[0]["params"]["name"], "Designer Sales")
+
     def test_core_write_plan_defensively_normalizes_structured_names(self):
         from src.agent import playbook_flow
 

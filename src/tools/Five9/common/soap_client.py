@@ -180,7 +180,9 @@ class Five9ConfigClient:
                 "campaign",
                 {
                     "defaultIvrSchedule": {
-                        "scriptName": default_ivr_script_name,
+                        "ivrSchedule": {
+                            "scriptName": default_ivr_script_name,
+                        },
                     },
                     "description": description,
                     "maxNumOfLines": max_num_of_lines,
