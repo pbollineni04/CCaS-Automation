@@ -140,6 +140,7 @@ PLANNED_CALLS = [
         "tool_name": "five9_create_inbound_campaign",
         "params": {
             "campaign_name": "Acme Main Inbound",
+            "default_ivr_script_name": "Main IVR",
             "queues": ["Sales", "Billing", "Support"],
         },
     },

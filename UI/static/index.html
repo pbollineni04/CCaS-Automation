@@ -1740,7 +1740,7 @@ const SAMPLE_CORE_WRITE_PLAN = [
   { tool_name: "five9_create_skill", params: { name: "English", description: "Language skill for English-speaking callers" } },
   { tool_name: "five9_create_disposition", params: { name: "Sale Completed" } },
   { tool_name: "five9_add_prompt_tts", params: { prompt_name: "Main Greeting", text: "Thank you for calling." } },
-  { tool_name: "five9_create_inbound_campaign", params: { campaign_name: "Acme Main Inbound", description: "Main inbound campaign" } },
+  { tool_name: "five9_create_inbound_campaign", params: { campaign_name: "Acme Main Inbound", default_ivr_script_name: "Main IVR", description: "Main inbound campaign" } },
   { tool_name: "five9_add_dnis_to_campaign", params: { campaign_name: "Acme Main Inbound", dnis: ["800-555-0100"] } },
   { tool_name: "five9_add_skills_to_campaign", params: { campaign_name: "Acme Main Inbound", skills: ["English"] } },
   { tool_name: "five9_add_dispositions_to_campaign", params: { campaign_name: "Acme Main Inbound", dispositions: ["Sale Completed"] } },

@@ -24,7 +24,10 @@ def analyze_playbook(playbook_path: str | Path) -> dict[str, Any]:
     entities = extract_five9_entities(workbook)
     ivr_requirements = extract_ivr_requirements(entities, workbook)
     preflight_plan = build_preflight_plan(entities)
-    core_write_plan = build_core_write_plan(entities)
+    core_write_plan = build_core_write_plan(
+        entities,
+        default_ivr_script_name=ivr_requirements.get("script_name"),
+    )
 
     return {
         "source": {
@@ -190,7 +193,10 @@ def build_preflight_plan(entities: dict[str, Any]) -> list[dict[str, Any]]:
     return plan
 
 
-def build_core_write_plan(entities: dict[str, Any]) -> list[dict[str, Any]]:
+def build_core_write_plan(
+    entities: dict[str, Any],
+    default_ivr_script_name: str | None = None,
+) -> list[dict[str, Any]]:
     calls: list[dict[str, Any]] = []
 
     for raw_skill in entities["skills"]:
@@ -219,11 +225,20 @@ def build_core_write_plan(entities: dict[str, Any]) -> list[dict[str, Any]]:
 
     for campaign in entities["inbound_campaigns"]:
         campaign_name = campaign["campaign_name"]
+        script_name = (
+            campaign.get("default_ivr_script_name")
+            or default_ivr_script_name
+        )
+        if not script_name:
+            raise ValueError(
+                f"default_ivr_script_name is required to create inbound campaign: {campaign_name}"
+            )
         calls.append(
             {
                 "tool_name": "five9_create_inbound_campaign",
                 "params": {
                     "campaign_name": campaign_name,
+                    "default_ivr_script_name": script_name,
                     "description": campaign.get("description"),
                 },
             }

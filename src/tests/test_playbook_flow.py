@@ -76,7 +76,10 @@ class PlaybookFlowTests(unittest.TestCase):
         }
 
         entities = playbook_flow.extract_five9_entities(workbook)
-        write_plan = playbook_flow.build_core_write_plan(entities)
+        write_plan = playbook_flow.build_core_write_plan(
+            entities,
+            default_ivr_script_name="Main IVR",
+        )
 
         self.assertEqual(entities["skills"], ["Rehash"])
         self.assertEqual(entities["inbound_campaigns"][0]["skills"], ["Rehash"])

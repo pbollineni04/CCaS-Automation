@@ -171,6 +171,7 @@ class AgenticPlaybookSchemaTests(unittest.TestCase):
                 "tool_name": "five9_create_inbound_campaign",
                 "params": {
                     "campaign_name": "JBRx Sales Main Agent Inbound",
+                    "default_ivr_script_name": "Main IVR",
                     "description": "Main inbound line",
                     "max_num_of_lines": 10,
                 },
@@ -222,7 +223,7 @@ class AgenticPlaybookSchemaTests(unittest.TestCase):
             [{"tool_name": "five9_create_skill", "params": {"name": "{'name': 'Skill'}"}}],
             [{"tool_name": "five9_add_skills_to_campaign", "params": {"campaign_name": "Campaign", "skills": [{"name": "Skill"}]}}],
             [{"tool_name": "five9_add_dnis_to_campaign", "params": {"campaign_name": "Campaign", "dnis": "8008852569"}}],
-            [{"tool_name": "five9_create_inbound_campaign", "params": {"campaign_name": "Campaign", "max_num_of_lines": "10"}}],
+            [{"tool_name": "five9_create_inbound_campaign", "params": {"campaign_name": "Campaign", "default_ivr_script_name": "Main IVR", "max_num_of_lines": "10"}}],
         ]
         for planned_calls in bad_cases:
             with self.subTest(planned_calls=planned_calls):
@@ -731,7 +732,10 @@ class AgenticGraphTests(unittest.TestCase):
         planned_calls = [
             {
                 "tool_name": "five9_create_inbound_campaign",
-                "params": {"campaign_name": "JBRx Sales Main Agent Inbound"},
+                "params": {
+                    "campaign_name": "JBRx Sales Main Agent Inbound",
+                    "default_ivr_script_name": "Main IVR",
+                },
             },
             {
                 "tool_name": "five9_add_dnis_to_campaign",
@@ -776,6 +780,16 @@ class AgenticGraphTests(unittest.TestCase):
             all(call["tool_name"] in allowed_agent_write_tools for call in result["proposed_write_plan"])
         )
         self.assertTrue(any(call["tool_name"] == "five9_create_ivr_script" for call in result["proposed_write_plan"]))
+        self.assertEqual(result["proposed_write_plan"][0]["tool_name"], "five9_create_ivr_script")
+        campaign_creates = [
+            call
+            for call in result["proposed_write_plan"]
+            if call["tool_name"] == "five9_create_inbound_campaign"
+        ]
+        self.assertTrue(campaign_creates)
+        self.assertTrue(
+            all(call["params"]["default_ivr_script_name"] == "Main Inbound" for call in campaign_creates)
+        )
         self.assertFalse(any(call["tool_name"] == "five9_modify_ivr_script" for call in result["proposed_write_plan"]))
         self.assertFalse(any(call["tool_name"] == "five9_delete_ivr_script" for call in result["proposed_write_plan"]))
         self.assertTrue(all(call["tool_name"] == "five9_get_ivr_scripts" for call in result["ivr_preflight_plan"]))

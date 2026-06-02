@@ -17,7 +17,13 @@ SAMPLE_WRITE_PLAN = [
         "tool_name": "five9_add_prompt_tts",
         "params": {"prompt_name": "Main Greeting", "text": "Thank you for calling."},
     },
-    {"tool_name": "five9_create_inbound_campaign", "params": {"campaign_name": "Acme Main Inbound"}},
+    {
+        "tool_name": "five9_create_inbound_campaign",
+        "params": {
+            "campaign_name": "Acme Main Inbound",
+            "default_ivr_script_name": "Main IVR",
+        },
+    },
     {
         "tool_name": "five9_add_dnis_to_campaign",
         "params": {"campaign_name": "Acme Main Inbound", "dnis": ["800-555-0100"]},

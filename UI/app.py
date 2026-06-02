@@ -392,20 +392,20 @@ def execute_playbook_agent(req: PlaybookAgentExecuteRequest):
             call for call in submitted_plan if call["tool_name"] == "five9_create_ivr_script"
         ]
         results = []
-        if core_calls:
-            results.extend(
-                five9_core_writes.execute_core_write_plan(
-                    approved=req.approved,
-                    planned_calls=core_calls,
-                    mode=req.mode,
-                    client=client,
-                )
-            )
         if ivr_script_calls:
             results.extend(
                 five9_ivr_scripts.execute_ivr_script_plan(
                     approved=req.approved,
                     planned_calls=ivr_script_calls,
+                    mode=req.mode,
+                    client=client,
+                )
+            )
+        if core_calls:
+            results.extend(
+                five9_core_writes.execute_core_write_plan(
+                    approved=req.approved,
+                    planned_calls=core_calls,
                     mode=req.mode,
                     client=client,
                 )

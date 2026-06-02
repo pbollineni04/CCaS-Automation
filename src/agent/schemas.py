@@ -78,7 +78,7 @@ CORE_WRITE_PARAM_SCHEMAS: dict[str, dict[str, Any]] = {
         "optional": {"description": "string", "voice": "string", "language": "string"},
     },
     "five9_create_inbound_campaign": {
-        "required": {"campaign_name": "string"},
+        "required": {"campaign_name": "string", "default_ivr_script_name": "string"},
         "optional": {"description": "string", "max_num_of_lines": "integer"},
     },
     "five9_add_dnis_to_campaign": {
@@ -129,7 +129,8 @@ def planned_calls_contract_text() -> str:
         "agent_must_complete_worksheet boolean, agent_must_confirm boolean, reset_attempts_counter boolean.\n"
         "- five9_add_prompt_tts params: prompt_name string required, text string required; "
         "optional description string, voice string, language string.\n"
-        "- five9_create_inbound_campaign params: campaign_name string required; "
+        "- five9_create_inbound_campaign params: campaign_name string required, "
+        "default_ivr_script_name string required; "
         "optional description string, max_num_of_lines integer.\n"
         "- five9_add_dnis_to_campaign params: campaign_name string required, dnis string[] required.\n"
         "- five9_add_skills_to_campaign params: campaign_name string required, skills string[] required.\n"
@@ -148,6 +149,7 @@ def planned_calls_contract_text() -> str:
         "\"params\": {\"name\": \"Appointment Set\"}}, "
         "{\"tool_name\": \"five9_create_inbound_campaign\", "
         "\"params\": {\"campaign_name\": \"JBRx Sales Main Agent Inbound\", "
+        "\"default_ivr_script_name\": \"Main IVR\", "
         "\"description\": \"Main inbound line\"}}, "
         "{\"tool_name\": \"five9_add_skills_to_campaign\", "
         "\"params\": {\"campaign_name\": \"JBRx Sales Main Agent Inbound\", "

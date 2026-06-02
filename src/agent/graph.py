@@ -163,7 +163,7 @@ def _build_write_plan(state: dict[str, Any]) -> dict[str, Any]:
         state["comparison"],
     )
     ivr_script_plan = validate_ivr_script_plan(state.get("ivr_script_plan", []))
-    combined_write_plan = write_plan + ivr_script_plan
+    combined_write_plan = ivr_script_plan + write_plan
     merged_review_items = list(state.get("review_items", [])) + review_items
     planned_entities = planned_calls_to_playbook_entities(state["ai_planned_calls"])
     return {

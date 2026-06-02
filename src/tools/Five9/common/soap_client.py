@@ -170,6 +170,7 @@ class Five9ConfigClient:
     def create_inbound_campaign(
         self,
         campaign_name: str,
+        default_ivr_script_name: str,
         description: str | None = None,
         max_num_of_lines: int | None = None,
     ) -> dict[str, Any]:
@@ -178,6 +179,9 @@ class Five9ConfigClient:
             _object_xml(
                 "campaign",
                 {
+                    "defaultIvrSchedule": {
+                        "scriptName": default_ivr_script_name,
+                    },
                     "description": description,
                     "maxNumOfLines": max_num_of_lines,
                     "name": campaign_name,

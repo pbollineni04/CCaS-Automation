@@ -147,7 +147,10 @@ class Five9CoreWriteToolTests(unittest.TestCase):
             },
             {
                 "tool_name": "five9_create_inbound_campaign",
-                "params": {"campaign_name": "Acme Main Inbound"},
+                "params": {
+                    "campaign_name": "Acme Main Inbound",
+                    "default_ivr_script_name": "Main IVR",
+                },
             },
             {
                 "tool_name": "five9_add_dnis_to_campaign",

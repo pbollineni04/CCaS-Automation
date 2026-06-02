@@ -325,7 +325,8 @@ def build_fallback_agent_plan_response(parsed_playbook: Mapping[str, Any]) -> di
                     "prompts": desired["prompts"],
                     "inbound_campaigns": desired["inbound_campaigns"],
                     "dnis": desired["dnis"],
-                }
+                },
+                default_ivr_script_name=ivr_requirements.get("script_name"),
             ),
             "ivr_requirements": ivr_requirements,
             "ivr_script_plan": _fallback_ivr_script_plan(ivr_requirements),

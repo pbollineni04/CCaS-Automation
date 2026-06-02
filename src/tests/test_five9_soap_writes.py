@@ -68,11 +68,17 @@ class Five9ConfigSoapWriteTests(unittest.TestCase):
     def test_create_inbound_campaign_posts_campaign_object(self):
         client, session = self._client_with_session()
 
-        client.create_inbound_campaign(campaign_name="Acme Main Inbound", description="Main inbound")
+        client.create_inbound_campaign(
+            campaign_name="Acme Main Inbound",
+            default_ivr_script_name="Main IVR",
+            description="Main inbound",
+        )
 
         body = session.calls[0]["data"]
         self.assertIn("<ser:createInboundCampaign>", body)
         self.assertIn("<campaign>", body)
+        self.assertIn("<defaultIvrSchedule><scriptName>Main IVR</scriptName></defaultIvrSchedule>", body)
+        self.assertNotIn("<defaultIvrSchedule><name>", body)
         self.assertIn("<name>Acme Main Inbound</name>", body)
         self.assertIn("<description>Main inbound</description>", body)
 

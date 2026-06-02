@@ -17,6 +17,7 @@ SOAP_METHOD = "createInboundCampaign"
 
 def five9_create_inbound_campaign(
     campaign_name: str,
+    default_ivr_script_name: str,
     description: str | None = None,
     max_num_of_lines: int | None = None,
     mode: str = "dry_run",
@@ -24,8 +25,10 @@ def five9_create_inbound_campaign(
     client: Any | None = None,
 ) -> dict[str, Any]:
     campaign_name = require_text(campaign_name, "campaign_name")
+    default_ivr_script_name = require_text(default_ivr_script_name, "default_ivr_script_name")
     params = clean_params(
         campaign_name=campaign_name,
+        default_ivr_script_name=default_ivr_script_name,
         description=description,
         max_num_of_lines=max_num_of_lines,
     )
