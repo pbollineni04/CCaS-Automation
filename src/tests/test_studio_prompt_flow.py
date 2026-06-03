@@ -335,6 +335,10 @@ class StudioPromptRouteTests(unittest.TestCase):
         self.assertIn("/api/run/five9/prompt-studio/audio-probe", ui_html)
         self.assertIn("/api/run/five9/prompt-studio/run", ui_html)
         self.assertIn("STUDIO_SCOPE_ID", ui_html)
+        self.assertIn("f-studio-global-voice-search", ui_html)
+        self.assertIn("studio-voice-search-", ui_html)
+        self.assertIn("filterStudioVoiceSelect", ui_html)
+        self.assertIn("Search voices", ui_html)
 
     def _upload(self, name: str, data: bytes):
         class FakeUpload:

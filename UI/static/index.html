@@ -1556,6 +1556,7 @@ function renderPromptBulkUploadForm(container, tool) {
             </div>
             <div class="field">
               <label>Global Studio TTS voice</label>
+              <input type="text" id="f-studio-global-voice-search" placeholder="Search voices" oninput="filterStudioVoiceSelect('f-studio-global-voice', this.value)">
               <select id="f-studio-global-voice"></select>
               <span class="hint">Fetch voices from Studio, then apply one voice to all prompts or override individual rows.</span>
             </div>
@@ -1792,6 +1793,37 @@ function studioVoiceOverrides() {
   return overrides;
 }
 
+function studioVoiceLabel(voice) {
+  return voice.voice_name || voice.tts_label || voice.tts_voice_id || "";
+}
+
+function studioVoiceSearchText(voice) {
+  return [
+    voice.voice_name,
+    voice.tts_label,
+    voice.provider,
+    voice.language,
+    voice.tts_voice_id,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function studioVoiceOptionHtml(voice) {
+  return `<option value="${escHtml(voice.tts_voice_id)}" data-search="${escHtml(studioVoiceSearchText(voice))}">${escHtml(studioVoiceLabel(voice))}</option>`;
+}
+
+function filterStudioVoiceSelect(selectId, query) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const currentValue = select.value;
+  const normalized = String(query || "").trim().toLowerCase();
+  [...select.options].forEach(option => {
+    if (!option.value) return;
+    const searchText = String(option.dataset.search || option.textContent || "").toLowerCase();
+    option.hidden = normalized ? !searchText.includes(normalized) : false;
+  });
+  if (currentValue) select.value = currentValue;
+}
+
 async function loadStudioPromptCredentials() {
   const btn = document.getElementById("load-studio-creds-btn");
   btn.textContent = "Loading...";
@@ -1880,11 +1912,10 @@ async function probeStudioAudio() {
 }
 
 function renderStudioVoiceOptions() {
-  const options = studioVoices.map(voice => (
-    `<option value="${escHtml(voice.tts_voice_id)}">${escHtml(voice.voice_name || voice.tts_label || voice.tts_voice_id)}</option>`
-  )).join("");
+  const options = studioVoices.map(studioVoiceOptionHtml).join("");
   const globalSelect = document.getElementById("f-studio-global-voice");
   globalSelect.innerHTML = options || `<option value="">Fetch Studio voices first</option>`;
+  filterStudioVoiceSelect("f-studio-global-voice", document.getElementById("f-studio-global-voice-search").value);
 }
 
 function renderStudioPromptPreview() {
@@ -1894,9 +1925,7 @@ function renderStudioPromptPreview() {
   if (!card || !target) return;
   card.style.display = studioPrompts.length ? "block" : "none";
   summary.textContent = `${studioPrompts.length} prompt(s) extracted from the playbook.`;
-  const voiceOptions = studioVoices.map(voice => (
-    `<option value="${escHtml(voice.tts_voice_id)}">${escHtml(voice.voice_name || voice.tts_label || voice.tts_voice_id)}</option>`
-  )).join("");
+  const voiceOptions = studioVoices.map(studioVoiceOptionHtml).join("");
   target.innerHTML = `
     <table>
       <thead><tr><th>Prompt</th><th>Text</th><th>Voice Override</th></tr></thead>
@@ -1905,7 +1934,10 @@ function renderStudioPromptPreview() {
           <tr>
             <td>${escHtml(prompt.prompt_name)}</td>
             <td>${escHtml(prompt.text)}</td>
-            <td><select id="studio-voice-${index}">${voiceOptions || `<option value="">Fetch voices first</option>`}</select></td>
+            <td>
+              <input type="text" id="studio-voice-search-${index}" placeholder="Search voices" oninput="filterStudioVoiceSelect('studio-voice-${index}', this.value)">
+              <select id="studio-voice-${index}">${voiceOptions || `<option value="">Fetch voices first</option>`}</select>
+            </td>
           </tr>
         `).join("")}
       </tbody>
