@@ -1590,16 +1590,25 @@ function renderPromptBulkUploadForm(container, tool) {
           <div class="form-grid">
             <div class="form-row">
               <div class="field">
+                <label>Studio region preset</label>
+                <select id="f-studio-region" onchange="applyStudioRegionPreset()">
+                  <option value="https://api.us7.studioportal.io">US7 legacy</option>
+                  <option value="https://api.prod.eu.five9.net/studio-backend/api">EU / UK</option>
+                  <option value="https://api.prod.in.five9.net/studio-backend/api">India</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              <div class="field">
                 <label>Studio base URL</label>
                 <input type="text" id="f-studio-base-url" value="https://api.us7.studioportal.io">
-                <span class="hint">Default is US7; edit for other Studio regions.</span>
+                <span class="hint">EU/UK accounts use https://api.prod.eu.five9.net/studio-backend/api.</span>
               </div>
+            </div>
+            <div class="form-row">
               <div class="field">
                 <label>Studio API key</label>
                 <input type="password" id="f-studio-api-key" autocomplete="new-password">
               </div>
-            </div>
-            <div class="form-row">
               <div class="field">
                 <label>Scope</label>
                 <select id="f-studio-scope">
@@ -1752,6 +1761,20 @@ function studioCredentialPayload() {
   };
 }
 
+function applyStudioRegionPreset() {
+  const region = document.getElementById("f-studio-region").value;
+  if (region !== "custom") {
+    document.getElementById("f-studio-base-url").value = region;
+  }
+}
+
+function syncStudioRegionPreset() {
+  const baseUrl = document.getElementById("f-studio-base-url").value.trim();
+  const region = document.getElementById("f-studio-region");
+  const matching = [...region.options].find(option => option.value === baseUrl);
+  region.value = matching ? matching.value : "custom";
+}
+
 function selectedStudioVoice() {
   const voiceId = document.getElementById("f-studio-global-voice").value;
   return studioVoices.find(v => String(v.tts_voice_id) === String(voiceId)) || {};
@@ -1780,6 +1803,7 @@ async function loadStudioPromptCredentials() {
     if (data.studio_scope) document.getElementById("f-studio-scope").value = data.studio_scope;
     if (data.studio_scope_id) document.getElementById("f-studio-scope-id").value = data.studio_scope_id;
     if (data.studio_api_key) document.getElementById("f-studio-api-key").value = data.studio_api_key;
+    syncStudioRegionPreset();
     btn.textContent = "Loaded";
     setTimeout(() => { btn.textContent = "Load Studio from .env"; btn.disabled = false; }, 1500);
   } catch (e) {

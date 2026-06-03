@@ -34,7 +34,7 @@ class StudioPromptClient:
         scope_id: str = "",
         session: Any = None,
     ):
-        self.base_url = (base_url or DEFAULT_STUDIO_BASE_URL).rstrip("/")
+        self.base_url = _normalize_base_url(base_url or DEFAULT_STUDIO_BASE_URL)
         self.api_key = api_key
         self.scope = scope or DEFAULT_STUDIO_SCOPE
         self.scope_id = str(scope_id or "")
@@ -292,6 +292,11 @@ def _prompt_payload(
         "folder_id": folder_id,
         "guard_name": "admin",
     }
+
+
+def _normalize_base_url(base_url: str) -> str:
+    cleaned = str(base_url or DEFAULT_STUDIO_BASE_URL).strip().rstrip("/")
+    return cleaned[:-4] if cleaned.endswith("/api") else cleaned
 
 
 def _normalize_voices(payload: Any) -> list[dict[str, Any]]:

@@ -108,6 +108,26 @@ class StudioPromptClientTests(unittest.TestCase):
         self.assertEqual(kwargs["headers"]["scope"], "ac")
         self.assertEqual(kwargs["headers"]["scope-id"], "42")
 
+    def test_client_accepts_doc_style_eu_base_url_that_already_includes_api(self):
+        from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import StudioPromptClient
+
+        session = FakeStudioSession([FakeJsonResponse({"data": []})])
+        client = StudioPromptClient(
+            base_url="https://api.prod.eu.five9.net/studio-backend/api/",
+            api_key="secret-key",
+            scope="ac",
+            scope_id="45",
+            session=session,
+        )
+
+        client.list_tts_voices()
+
+        _, url, _ = session.calls[0]
+        self.assertEqual(
+            url,
+            "https://api.prod.eu.five9.net/studio-backend/api/prompt/tts-voices",
+        )
+
     def test_create_prompt_request_matches_studio_payload_shape(self):
         from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import StudioPromptClient
 
