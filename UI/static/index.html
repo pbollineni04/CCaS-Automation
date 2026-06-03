@@ -1550,21 +1550,12 @@ function renderPromptBulkUploadForm(container, tool) {
           <!-- Playbook Studio Flow fields -->
           <div class="mode-section" id="mode-studio-fields">
             <div class="field">
-              <label>Five9 implementation playbook (.xlsx)</label>
+              <label>Step 1 - Upload playbook (.xlsx)</label>
               <input type="file" id="f-studio-playbook" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
               <span class="hint">Extracts prompt_name and prompt script verbiage from the Prompts tab.</span>
             </div>
-            <div class="field">
-              <label>Global Studio TTS voice</label>
-              <input type="text" id="f-studio-global-voice-search" placeholder="Search voices" oninput="filterStudioVoiceSelect('f-studio-global-voice', this.value)">
-              <select id="f-studio-global-voice" onchange="applyGlobalStudioVoiceToPrompts()"></select>
-              <span class="hint">Fetch voices from Studio, then apply one voice to all prompts or override individual rows.</span>
-            </div>
-            <div class="field">
-              <label class="checkbox-row" style="margin-top:4px">
-                <input type="checkbox" id="f-studio-overwrite">
-                <span>Overwrite existing Studio/VCC prompts</span>
-              </label>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="previewStudioPrompts()">Preview Prompts</button>
             </div>
           </div>
 
@@ -1627,23 +1618,34 @@ function renderPromptBulkUploadForm(container, tool) {
                 <span class="hint">For scope ac, use the Account ID from Studio > Manage > Account Profile. .env key: STUDIO_SCOPE_ID.</span>
               </div>
             </div>
+            <div class="field">
+              <label>Step 3 - Global Studio TTS voice</label>
+              <input type="text" id="f-studio-global-voice-search" placeholder="Search voices" oninput="filterStudioVoiceSelect('f-studio-global-voice', this.value)">
+              <select id="f-studio-global-voice" onchange="applyGlobalStudioVoiceToPrompts()"></select>
+              <span class="hint">Fetch voices from Studio, then apply one voice to all prompts or override individual rows.</span>
+            </div>
             <div class="actions">
-              <button type="button" class="btn-secondary" onclick="previewStudioPrompts()">Preview Prompts</button>
               <button type="button" class="btn-secondary" onclick="fetchStudioVoices()">Fetch Voices</button>
-              <button type="button" class="btn-secondary" onclick="probeStudioAudio()">Probe Audio</button>
             </div>
           </div>
         </div>
 
         <div class="card" id="studio-preview-card" style="display:none">
-          <div class="card-title">Playbook Prompts and Voice Overrides</div>
+          <div class="card-title">Step 2 / 4 - Prompt Preview, Voice Overrides, and Audio Preview</div>
           <div id="studio-preview-summary" class="alert success"></div>
+          <div class="actions" style="margin-bottom:12px">
+            <button type="button" class="btn-secondary" id="studio-probe-all-btn" onclick="probeAllStudioAudio()">Probe All Audio</button>
+          </div>
           <div id="studio-prompt-preview"></div>
         </div>
 
         <div class="card">
-          <div class="card-title">Live Approval</div>
+          <div class="card-title">Step 5 - Live Approval</div>
           <div class="alert warning">This mode creates or updates Studio prompt content, downloads generated WAV audio, and uploads WAV prompts to Five9 VCC.</div>
+          <label class="checkbox-row" style="margin-bottom:10px">
+            <input type="checkbox" id="f-studio-overwrite">
+            <span>Overwrite existing Studio/VCC prompts</span>
+          </label>
           <label class="checkbox-row">
             <input type="checkbox" id="f-studio-approved">
             <span>I approve these live Studio and Five9 VCC prompt changes.</span>
@@ -1696,6 +1698,9 @@ function renderPromptBulkUploadForm(container, tool) {
 let uploadMode = "csv";
 let studioPrompts = [];
 let studioVoices = [];
+let studioAudioProbes = {};
+let studioPromptVoiceSelections = {};
+const STUDIO_AUDIO_FILE_ENDPOINT = "/api/run/five9/prompt-studio/audio-file";
 
 function setUploadMode(mode) {
   uploadMode = mode;
@@ -1826,12 +1831,35 @@ function studioVoiceOverrides() {
   return overrides;
 }
 
+function setStudioPromptVoiceSelection(index, voiceId) {
+  if (voiceId) studioPromptVoiceSelections[index] = voiceId;
+  else delete studioPromptVoiceSelections[index];
+  delete studioAudioProbes[index];
+  renderStudioPromptAudioCellByIndex(index);
+}
+
 function applyGlobalStudioVoiceToPrompts() {
   const globalSelect = document.getElementById("f-studio-global-voice");
   if (!globalSelect || !globalSelect.value) return;
   studioPrompts.forEach((_, index) => {
+    studioPromptVoiceSelections[index] = globalSelect.value;
+    delete studioAudioProbes[index];
     const select = document.getElementById(`studio-voice-${index}`);
     if (select) select.value = globalSelect.value;
+    renderStudioPromptAudioCellByIndex(index);
+  });
+}
+
+function applyStoredStudioVoiceSelections() {
+  const globalValue = document.getElementById("f-studio-global-voice").value;
+  studioPrompts.forEach((_, index) => {
+    const select = document.getElementById(`studio-voice-${index}`);
+    if (!select) return;
+    const value = studioPromptVoiceSelections[index] || globalValue || "";
+    if (value) {
+      select.value = value;
+      studioPromptVoiceSelections[index] = value;
+    }
   });
 }
 
@@ -1901,6 +1929,8 @@ async function previewStudioPrompts() {
     const data = await readApiResponse(res);
     if (!res.ok) throw new Error(data.detail || res.statusText);
     studioPrompts = data.prompts || [];
+    studioAudioProbes = {};
+    studioPromptVoiceSelections = {};
     renderStudioPromptPreview();
     resultsArea.innerHTML = "";
   } catch (e) {
@@ -1928,13 +1958,30 @@ async function fetchStudioVoices() {
 }
 
 async function probeStudioAudio() {
+  await probeStudioPromptAudio(0);
+}
+
+function selectedStudioVoiceForPrompt(index) {
+  const select = document.getElementById(`studio-voice-${index}`);
+  const voiceId = select && select.value ? select.value : document.getElementById("f-studio-global-voice").value;
+  return studioVoices.find(v => String(v.tts_voice_id) === String(voiceId)) || {};
+}
+
+async function probeStudioPromptAudio(index) {
   const resultsArea = document.getElementById("results-area");
-  const prompt = studioPrompts[0];
-  const voice = selectedStudioVoice();
+  const prompt = studioPrompts[index];
+  const voice = selectedStudioVoiceForPrompt(index);
   if (!prompt) {
     resultsArea.innerHTML = `<div class="alert error">Preview playbook prompts before probing audio.</div>`;
-    return;
+    return false;
   }
+  if (!voice.tts_voice_id) {
+    studioAudioProbes[index] = { status: "failed", error: "Fetch and select a Studio voice first." };
+    renderStudioPromptPreview();
+    return false;
+  }
+  studioAudioProbes[index] = { status: "loading" };
+  renderStudioPromptPreview();
   try {
     const res = await fetch("/api/run/five9/prompt-studio/audio-probe", {
       method: "POST",
@@ -1947,10 +1994,62 @@ async function probeStudioAudio() {
     });
     const data = await readApiResponse(res);
     if (!res.ok) throw new Error(data.detail || res.statusText);
-    resultsArea.innerHTML = `<div class="alert success">Audio probe saved ${escHtml(data.bytes)} bytes to ${escHtml(data.wav_path)} via ${escHtml(data.source)}.</div>`;
+    studioAudioProbes[index] = { status: "ready", ...data };
+    renderStudioPromptPreview();
+    resultsArea.innerHTML = `<div class="alert success">Audio probe ready for ${escHtml(prompt.prompt_name)}.</div>`;
+    return true;
   } catch (e) {
-    resultsArea.innerHTML = `<div class="alert error">Audio probe failed: ${escHtml(e.message)}</div>`;
+    studioAudioProbes[index] = { status: "failed", error: e.message };
+    renderStudioPromptPreview();
+    resultsArea.innerHTML = `<div class="alert error">Audio probe failed for ${escHtml(prompt.prompt_name)}: ${escHtml(e.message)}</div>`;
+    return false;
   }
+}
+
+async function probeAllStudioAudio() {
+  const resultsArea = document.getElementById("results-area");
+  const btn = document.getElementById("studio-probe-all-btn");
+  if (!studioPrompts.length) {
+    resultsArea.innerHTML = `<div class="alert error">Preview playbook prompts before probing audio.</div>`;
+    return;
+  }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Probing...";
+  }
+  let succeeded = 0;
+  try {
+    for (let index = 0; index < studioPrompts.length; index++) {
+      if (await probeStudioPromptAudio(index)) succeeded += 1;
+    }
+    const failed = studioPrompts.length - succeeded;
+    resultsArea.innerHTML = `<div class="alert ${failed ? "warning" : "success"}">${succeeded} audio probe(s) ready.${failed ? ` ${failed} failed.` : ""}</div>`;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Probe All Audio";
+    }
+  }
+}
+
+function renderStudioPromptAudioCell(index) {
+  const probe = studioAudioProbes[index] || {};
+  if (probe.status === "loading") {
+    return `<button type="button" class="btn-secondary" disabled>Probing...</button>`;
+  }
+  const audioUrl = probe.audio_url || (probe.wav_path ? `${STUDIO_AUDIO_FILE_ENDPOINT}?path=${encodeURIComponent(probe.wav_path)}` : "");
+  if (audioUrl) {
+    return `<audio controls preload="none" src="${escHtml(audioUrl)}" style="width:220px"></audio>`;
+  }
+  if (probe.status === "failed") {
+    return `<div class="error-text">${escHtml(probe.error || "Audio probe failed")}</div><button type="button" class="btn-secondary" onclick="probeStudioPromptAudio(${index})">Retry Probe</button>`;
+  }
+  return `<button type="button" class="btn-secondary" onclick="probeStudioPromptAudio(${index})">Probe</button>`;
+}
+
+function renderStudioPromptAudioCellByIndex(index) {
+  const cell = document.getElementById(`studio-audio-cell-${index}`);
+  if (cell) cell.innerHTML = renderStudioPromptAudioCell(index);
 }
 
 function renderStudioVoiceOptions() {
@@ -1958,7 +2057,8 @@ function renderStudioVoiceOptions() {
   const globalSelect = document.getElementById("f-studio-global-voice");
   globalSelect.innerHTML = options || `<option value="">Fetch Studio voices first</option>`;
   filterStudioVoiceSelect("f-studio-global-voice", document.getElementById("f-studio-global-voice-search").value);
-  applyGlobalStudioVoiceToPrompts();
+  if (Object.keys(studioPromptVoiceSelections).length) applyStoredStudioVoiceSelections();
+  else applyGlobalStudioVoiceToPrompts();
 }
 
 function renderStudioPromptPreview() {
@@ -1971,7 +2071,7 @@ function renderStudioPromptPreview() {
   const voiceOptions = studioVoices.map(studioVoiceOptionHtml).join("");
   target.innerHTML = `
     <table>
-      <thead><tr><th>Prompt</th><th>Text</th><th>Voice Override</th></tr></thead>
+      <thead><tr><th>Prompt</th><th>Text</th><th>Voice Override</th><th>Audio Preview</th></tr></thead>
       <tbody>
         ${studioPrompts.map((prompt, index) => `
           <tr>
@@ -1979,13 +2079,14 @@ function renderStudioPromptPreview() {
             <td>${escHtml(prompt.text)}</td>
             <td>
               <input type="text" id="studio-voice-search-${index}" placeholder="Search voices" oninput="filterStudioVoiceSelect('studio-voice-${index}', this.value)">
-              <select id="studio-voice-${index}">${voiceOptions || `<option value="">Fetch voices first</option>`}</select>
+              <select id="studio-voice-${index}" onchange="setStudioPromptVoiceSelection(${index}, this.value)">${voiceOptions || `<option value="">Fetch voices first</option>`}</select>
             </td>
+            <td id="studio-audio-cell-${index}">${renderStudioPromptAudioCell(index)}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>`;
-  applyGlobalStudioVoiceToPrompts();
+  applyStoredStudioVoiceSelections();
 }
 
 // ---------------------------------------------------------------------------

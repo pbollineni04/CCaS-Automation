@@ -6,6 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -326,6 +327,20 @@ class StudioPromptRouteTests(unittest.TestCase):
 
         self.assertEqual(ctx.exception.status_code, 403)
 
+    def test_audio_file_route_serves_probe_outputs_and_blocks_escape(self):
+        audio_dir = ROOT / "outputs" / "prompt_audio" / "route-test"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        wav_path = audio_dir / "sample.wav"
+        wav_path.write_bytes(b"RIFFtest")
+
+        response = self.ui_app.get_studio_prompt_audio_file(str(wav_path))
+
+        self.assertIsInstance(response, FileResponse)
+        self.assertEqual(Path(response.path), wav_path.resolve())
+        with self.assertRaises(HTTPException) as ctx:
+            self.ui_app.get_studio_prompt_audio_file(str(ROOT / "UI" / "static" / "index.html"))
+        self.assertEqual(ctx.exception.status_code, 404)
+
     def test_ui_exposes_playbook_studio_flow(self):
         ui_html = (ROOT / "UI" / "static" / "index.html").read_text(encoding="utf-8")
 
@@ -346,6 +361,12 @@ class StudioPromptRouteTests(unittest.TestCase):
         self.assertIn("Custom endpoint", ui_html)
         self.assertIn("resolveFive9Endpoint", ui_html)
         self.assertIn("applyLoadedFive9Domain", ui_html)
+        self.assertIn("Probe All Audio", ui_html)
+        self.assertIn("probeAllStudioAudio", ui_html)
+        self.assertIn("probeStudioPromptAudio", ui_html)
+        self.assertIn("renderStudioPromptAudioCell", ui_html)
+        self.assertIn("Audio Preview", ui_html)
+        self.assertIn("/api/run/five9/prompt-studio/audio-file", ui_html)
 
     def _upload(self, name: str, data: bytes):
         class FakeUpload:

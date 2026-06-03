@@ -16,6 +16,7 @@ import tempfile
 import textwrap
 import traceback
 import uuid
+from urllib.parse import quote
 from pathlib import Path
 from fastapi import FastAPI, Form, HTTPException, Query
 from fastapi import File, UploadFile
@@ -1191,12 +1192,26 @@ def probe_studio_prompt_audio(req: StudioAudioProbeRequest):
             voice=req.selected_voice,
             output_dir=_studio_output_dir("probe"),
         )
+        result["audio_url"] = _studio_audio_url(result["wav_path"])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=502, detail=f"Studio audio probe failed: {e}")
     return result
+
+
+@app.get("/api/run/five9/prompt-studio/audio-file")
+def get_studio_prompt_audio_file(path: str = Query(...)):
+    resolved = Path(path).resolve()
+    audio_root = (ROOT / "outputs" / "prompt_audio").resolve()
+    try:
+        resolved.relative_to(audio_root)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    if not resolved.is_file():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return FileResponse(str(resolved), media_type="audio/wav")
 
 
 @app.post("/api/run/five9/prompt-studio/run")
@@ -1262,6 +1277,11 @@ def _studio_prompt_client(req: StudioCredentialsRequest) -> StudioPromptClient:
 
 def _studio_output_dir(kind: str) -> Path:
     return ROOT / "outputs" / "prompt_audio" / f"{kind}-{uuid.uuid4().hex[:12]}"
+
+
+def _studio_audio_url(wav_path: str) -> str:
+    resolved = str(Path(wav_path).resolve())
+    return f"/api/run/five9/prompt-studio/audio-file?path={quote(resolved, safe='')}"
 
 
 @app.post("/api/run/five9/prompt-bulk-upload")
