@@ -72,6 +72,18 @@ class WorkspaceStructureTests(unittest.TestCase):
 
         self.assertIn("pack dispatchers and facades", ui_context)
 
+    def test_ui_splits_main_and_test_tool_surfaces(self):
+        app_source = (ROOT / "UI" / "app.py").read_text(encoding="utf-8")
+        ui_html = (ROOT / "UI" / "static" / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn('@app.get("/test")', app_source)
+        self.assertIn("MAIN_TOOL_IDS", ui_html)
+        self.assertIn('"five9.playbook_agent"', ui_html)
+        self.assertIn('"five9.prompt_bulk_upload"', ui_html)
+        self.assertIn("TEST_TOOL_IDS", ui_html)
+        self.assertIn('"five9.core_writes"', ui_html)
+        self.assertIn('window.location.pathname.replace(/\\/+$/, "") === "/test"', ui_html)
+
 
 if __name__ == "__main__":
     unittest.main()

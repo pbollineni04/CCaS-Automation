@@ -69,6 +69,11 @@ def index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 
+@app.get("/test")
+def test_tools():
+    return FileResponse(str(STATIC_DIR / "index.html"))
+
+
 @app.get("/demo")
 def demo():
     return FileResponse(str(STATIC_DIR / "demo.html"))

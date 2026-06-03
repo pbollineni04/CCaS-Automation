@@ -63,6 +63,25 @@
     border-radius: 20px;
     font-weight: 500;
   }
+  .top-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .top-nav a {
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .top-nav a:hover,
+  .top-nav a.active {
+    background: #252846;
+    color: #fff;
+  }
 
   #body { display: flex; flex: 1; overflow: hidden; }
 
@@ -668,11 +687,15 @@
 <div id="app">
   <header>
     <div class="logo">CCa<span>a</span>S <span style="font-weight:300">Automation</span></div>
-    <div class="badge">Tools</div>
+    <div class="badge" id="mode-badge">Tools</div>
+    <nav class="top-nav">
+      <a href="/" id="nav-main">Main</a>
+      <a href="/test" id="nav-test">Test</a>
+    </nav>
   </header>
   <div id="body">
     <aside id="sidebar">
-      <div class="tree-section-label">Platforms</div>
+      <div class="tree-section-label" id="tree-section-label">Platforms</div>
       <div id="tree"></div>
     </aside>
     <main id="content">
@@ -789,6 +812,49 @@ const TREE = [
     ]
   }
 ];
+
+const MAIN_TOOL_IDS = new Set([
+  "five9.playbook_agent",
+  "five9.prompt_bulk_upload",
+]);
+
+const TEST_TOOL_IDS = new Set([
+  "five9.config_preflight",
+  "five9.core_writes",
+  "five9.ivr_scripts",
+  "five9.ivr_builder",
+  "five9.modify_config",
+  "five9.rollback_deletes",
+]);
+
+const IS_TEST_PAGE = window.location.pathname.replace(/\/+$/, "") === "/test";
+
+function filterToolTree(nodes, allowedToolIds) {
+  return nodes
+    .map(node => {
+      if (node.tool) {
+        return allowedToolIds.has(node.id) ? { ...node } : null;
+      }
+      const children = filterToolTree(node.children || [], allowedToolIds);
+      return children.length ? { ...node, children } : null;
+    })
+    .filter(Boolean);
+}
+
+function configureShell() {
+  const modeBadge = document.getElementById("mode-badge");
+  const sectionLabel = document.getElementById("tree-section-label");
+  const welcome = document.getElementById("welcome");
+  document.getElementById("nav-main").classList.toggle("active", !IS_TEST_PAGE);
+  document.getElementById("nav-test").classList.toggle("active", IS_TEST_PAGE);
+  document.title = IS_TEST_PAGE ? "CCaaS Automation Test Tools" : "CCaaS Automation";
+  modeBadge.textContent = IS_TEST_PAGE ? "Test Tools" : "Main Tools";
+  sectionLabel.textContent = IS_TEST_PAGE ? "Test tools" : "Main tools";
+  welcome.querySelector("h2").textContent = IS_TEST_PAGE ? "Select a test tool" : "Select a tool";
+  welcome.querySelector("p").textContent = IS_TEST_PAGE
+    ? "Diagnostic and lower-level tool panels live here."
+    : "Choose Playbook Agent or Prompt Bulk Upload from the sidebar.";
+}
 
 // ---------------------------------------------------------------------------
 // Tool form definitions
@@ -4470,7 +4536,11 @@ async function browseDirectory(inputId, title) {
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
-renderTree(TREE, document.getElementById("tree"));
+configureShell();
+renderTree(
+  filterToolTree(TREE, IS_TEST_PAGE ? TEST_TOOL_IDS : MAIN_TOOL_IDS),
+  document.getElementById("tree"),
+);
 </script>
 </body>
 </html>
