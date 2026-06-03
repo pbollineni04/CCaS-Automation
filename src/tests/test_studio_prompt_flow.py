@@ -128,6 +128,44 @@ class StudioPromptClientTests(unittest.TestCase):
             "https://api.prod.eu.five9.net/studio-backend/api/prompt/tts-voices",
         )
 
+    def test_client_falls_back_to_languages_when_tts_voices_is_forbidden(self):
+        from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import StudioPromptClient
+
+        session = FakeStudioSession([
+            FakeJsonResponse(
+                {"message": "User does not have permission to perform this action."},
+                status_code=403,
+            ),
+            FakeJsonResponse(
+                {
+                    "data": {
+                        "English (UK)": [
+                            {
+                                "tts_voice_id": 3001,
+                                "voice_name": "en-GB-SoniaNeural",
+                                "provider": "microsoft",
+                                "lang": "en-GB",
+                            }
+                        ]
+                    }
+                }
+            ),
+        ])
+        client = StudioPromptClient(
+            base_url="https://api.prod.uk.five9.net/studio-backend/api/",
+            api_key="secret-key",
+            scope="ac",
+            scope_id="45",
+            session=session,
+        )
+
+        voices = client.list_tts_voices()
+
+        self.assertEqual(voices[0]["tts_voice_id"], 3001)
+        self.assertEqual(voices[0]["voice_name"], "en-GB-SoniaNeural")
+        self.assertEqual(voices[0]["language"], "en-GB")
+        self.assertEqual(session.calls[1][1], "https://api.prod.uk.five9.net/studio-backend/api/prompt/languages")
+
     def test_create_prompt_request_matches_studio_payload_shape(self):
         from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import StudioPromptClient
 

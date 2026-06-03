@@ -1593,7 +1593,8 @@ function renderPromptBulkUploadForm(container, tool) {
                 <label>Studio region preset</label>
                 <select id="f-studio-region" onchange="applyStudioRegionPreset()">
                   <option value="https://api.us7.studioportal.io">US7 legacy</option>
-                  <option value="https://api.prod.eu.five9.net/studio-backend/api">EU / UK</option>
+                  <option value="https://api.prod.uk.five9.net/studio-backend/api">UK</option>
+                  <option value="https://api.prod.eu.five9.net/studio-backend/api">EU</option>
                   <option value="https://api.prod.in.five9.net/studio-backend/api">India</option>
                   <option value="custom">Custom</option>
                 </select>
@@ -1601,7 +1602,7 @@ function renderPromptBulkUploadForm(container, tool) {
               <div class="field">
                 <label>Studio base URL</label>
                 <input type="text" id="f-studio-base-url" value="https://api.us7.studioportal.io">
-                <span class="hint">EU/UK accounts use https://api.prod.eu.five9.net/studio-backend/api.</span>
+                <span class="hint">UK accounts use https://api.prod.uk.five9.net/studio-backend/api.</span>
               </div>
             </div>
             <div class="form-row">

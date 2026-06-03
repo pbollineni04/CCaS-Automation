@@ -57,6 +57,14 @@ class StudioPromptClient:
             headers=self._headers(),
             timeout=60,
         )
+        if response.status_code in {401, 403}:
+            fallback = self._session.get(
+                self._url("/api/prompt/languages"),
+                headers=self._headers(),
+                timeout=60,
+            )
+            fallback.raise_for_status()
+            return _normalize_voices(fallback.json())
         response.raise_for_status()
         return _normalize_voices(response.json())
 
@@ -315,7 +323,7 @@ def _normalize_voices(payload: Any) -> list[dict[str, Any]]:
                 "voice_name": voice_name,
                 "tts_label": item.get("tts_label") or voice_name,
                 "provider": item.get("provider") or item.get("tts_provider") or "",
-                "language": item.get("language") or item.get("locale") or "",
+                "language": item.get("language") or item.get("lang") or item.get("locale") or "",
             }
         )
     return voices
@@ -343,6 +351,12 @@ def _list_from_payload(payload: Any, keys: tuple[str, ...]) -> list[Any]:
             nested = _list_from_payload(value, keys)
             if nested:
                 return nested
+            flattened = []
+            for nested_value in value.values():
+                if isinstance(nested_value, list):
+                    flattened.extend(nested_value)
+            if flattened:
+                return flattened
     return []
 
 
