@@ -1502,6 +1502,7 @@ function renderPromptBulkUploadForm(container, tool) {
       <div class="mode-tabs">
         <button type="button" class="mode-tab active" id="tab-csv" onclick="setUploadMode('csv')">CSV Manifest</button>
         <button type="button" class="mode-tab" id="tab-wav" onclick="setUploadMode('wav')">WAV Folder</button>
+        <button type="button" class="mode-tab" id="tab-studio" onclick="setUploadMode('studio')">Playbook Studio Flow</button>
       </div>
 
       <div class="card">
@@ -1546,6 +1547,26 @@ function renderPromptBulkUploadForm(container, tool) {
             </div>
           </div>
 
+          <!-- Playbook Studio Flow fields -->
+          <div class="mode-section" id="mode-studio-fields">
+            <div class="field">
+              <label>Five9 implementation playbook (.xlsx)</label>
+              <input type="file" id="f-studio-playbook" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+              <span class="hint">Extracts prompt_name and prompt script verbiage from the Prompts tab.</span>
+            </div>
+            <div class="field">
+              <label>Global Studio TTS voice</label>
+              <select id="f-studio-global-voice"></select>
+              <span class="hint">Fetch voices from Studio, then apply one voice to all prompts or override individual rows.</span>
+            </div>
+            <div class="field">
+              <label class="checkbox-row" style="margin-top:4px">
+                <input type="checkbox" id="f-studio-overwrite">
+                <span>Overwrite existing Studio/VCC prompts</span>
+              </label>
+            </div>
+          </div>
+
           <!-- Shared fields -->
           <div class="field">
             <label>Domain</label>
@@ -1557,6 +1578,62 @@ function renderPromptBulkUploadForm(container, tool) {
             </select>
           </div>
 
+        </div>
+      </div>
+
+      <div class="mode-section" id="mode-studio-cards">
+        <div class="card">
+          <div class="cred-header">
+            <div class="card-title" style="margin:0">Studio Credentials</div>
+            <button type="button" class="btn-link" id="load-studio-creds-btn">Load Studio from .env</button>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <div class="field">
+                <label>Studio base URL</label>
+                <input type="text" id="f-studio-base-url" value="https://api.us7.studioportal.io">
+                <span class="hint">Default is US7; edit for other Studio regions.</span>
+              </div>
+              <div class="field">
+                <label>Studio API key</label>
+                <input type="password" id="f-studio-api-key" autocomplete="new-password">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Scope</label>
+                <select id="f-studio-scope">
+                  <option value="ac">ac - Account</option>
+                  <option value="sp">sp - Service Provider</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Scope ID</label>
+                <input type="text" id="f-studio-scope-id" placeholder="Account ID">
+                <span class="hint">For scope ac, use the Account ID from Studio > Manage > Account Profile. .env key: STUDIO_SCOPE_ID.</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-secondary" onclick="previewStudioPrompts()">Preview Prompts</button>
+              <button type="button" class="btn-secondary" onclick="fetchStudioVoices()">Fetch Voices</button>
+              <button type="button" class="btn-secondary" onclick="probeStudioAudio()">Probe Audio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="studio-preview-card" style="display:none">
+          <div class="card-title">Playbook Prompts and Voice Overrides</div>
+          <div id="studio-preview-summary" class="alert success"></div>
+          <div id="studio-prompt-preview"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Live Approval</div>
+          <div class="alert warning">This mode creates or updates Studio prompt content, downloads generated WAV audio, and uploads WAV prompts to Five9 VCC.</div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="f-studio-approved">
+            <span>I approve these live Studio and Five9 VCC prompt changes.</span>
+          </label>
         </div>
       </div>
 
@@ -1598,16 +1675,25 @@ function renderPromptBulkUploadForm(container, tool) {
   document.getElementById("load-creds-btn").addEventListener("click", () => {
     loadCredentials(tool.credentialsEndpoint);
   });
+  document.getElementById("load-studio-creds-btn").addEventListener("click", loadStudioPromptCredentials);
+  setUploadMode(uploadMode);
 }
 
 let uploadMode = "csv";
+let studioPrompts = [];
+let studioVoices = [];
 
 function setUploadMode(mode) {
   uploadMode = mode;
   document.getElementById("tab-csv").classList.toggle("active", mode === "csv");
   document.getElementById("tab-wav").classList.toggle("active", mode === "wav");
+  document.getElementById("tab-studio").classList.toggle("active", mode === "studio");
   document.getElementById("mode-csv-fields").classList.toggle("active", mode === "csv");
   document.getElementById("mode-wav-fields").classList.toggle("active", mode === "wav");
+  document.getElementById("mode-studio-fields").classList.toggle("active", mode === "studio");
+  document.getElementById("mode-studio-cards").classList.toggle("active", mode === "studio");
+  const runBtn = document.getElementById("run-btn");
+  if (runBtn) runBtn.textContent = mode === "studio" ? "Run Studio Flow" : "Run Upload";
   clearResults();
 }
 
@@ -1632,12 +1718,173 @@ function collectPromptBulkUploadForm() {
       ...shared,
     };
   }
+  if (uploadMode === "studio") {
+    return {
+      _endpoint: "/api/run/five9/prompt-studio/run",
+      approved: document.getElementById("f-studio-approved").checked,
+      prompts: studioPrompts,
+      selected_voice: selectedStudioVoice(),
+      voice_overrides: studioVoiceOverrides(),
+      overwrite: document.getElementById("f-studio-overwrite").checked,
+      studio_api_key: document.getElementById("f-studio-api-key").value,
+      studio_base_url: document.getElementById("f-studio-base-url").value.trim() || "https://api.us7.studioportal.io",
+      studio_scope: document.getElementById("f-studio-scope").value,
+      studio_scope_id: document.getElementById("f-studio-scope-id").value.trim(),
+      five9_domain: shared.domain,
+      five9_username: shared.username,
+      five9_password: shared.password,
+    };
+  }
   return {
     _endpoint: "/api/run/five9/prompt-bulk-upload",
     manifest_path: document.getElementById("f-manifest").value.trim(),
     wav_dir: document.getElementById("f-wavdir").value.trim() || ".",
     ...shared,
   };
+}
+
+function studioCredentialPayload() {
+  return {
+    studio_api_key: document.getElementById("f-studio-api-key").value,
+    studio_base_url: document.getElementById("f-studio-base-url").value.trim() || "https://api.us7.studioportal.io",
+    studio_scope: document.getElementById("f-studio-scope").value,
+    studio_scope_id: document.getElementById("f-studio-scope-id").value.trim(),
+  };
+}
+
+function selectedStudioVoice() {
+  const voiceId = document.getElementById("f-studio-global-voice").value;
+  return studioVoices.find(v => String(v.tts_voice_id) === String(voiceId)) || {};
+}
+
+function studioVoiceOverrides() {
+  const overrides = {};
+  studioPrompts.forEach((prompt, index) => {
+    const select = document.getElementById(`studio-voice-${index}`);
+    if (!select || !select.value || select.value === document.getElementById("f-studio-global-voice").value) return;
+    const voice = studioVoices.find(v => String(v.tts_voice_id) === String(select.value));
+    if (voice) overrides[prompt.prompt_name] = voice;
+  });
+  return overrides;
+}
+
+async function loadStudioPromptCredentials() {
+  const btn = document.getElementById("load-studio-creds-btn");
+  btn.textContent = "Loading...";
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/credentials/studio-prompt");
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    if (data.studio_base_url) document.getElementById("f-studio-base-url").value = data.studio_base_url;
+    if (data.studio_scope) document.getElementById("f-studio-scope").value = data.studio_scope;
+    if (data.studio_scope_id) document.getElementById("f-studio-scope-id").value = data.studio_scope_id;
+    if (data.studio_api_key) document.getElementById("f-studio-api-key").value = data.studio_api_key;
+    btn.textContent = "Loaded";
+    setTimeout(() => { btn.textContent = "Load Studio from .env"; btn.disabled = false; }, 1500);
+  } catch (e) {
+    btn.textContent = "Failed";
+    btn.disabled = false;
+  }
+}
+
+async function previewStudioPrompts() {
+  const resultsArea = document.getElementById("results-area");
+  const fileInput = document.getElementById("f-studio-playbook");
+  if (!fileInput.files[0]) {
+    resultsArea.innerHTML = `<div class="alert error">Choose a playbook file first.</div>`;
+    return;
+  }
+  const payload = new FormData();
+  payload.append("file", fileInput.files[0]);
+  try {
+    const res = await fetch("/api/run/five9/prompt-studio/preview", { method: "POST", body: payload });
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    studioPrompts = data.prompts || [];
+    renderStudioPromptPreview();
+    resultsArea.innerHTML = "";
+  } catch (e) {
+    resultsArea.innerHTML = `<div class="alert error">Preview failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function fetchStudioVoices() {
+  const resultsArea = document.getElementById("results-area");
+  try {
+    const res = await fetch("/api/run/five9/prompt-studio/voices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(studioCredentialPayload()),
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    studioVoices = data.voices || [];
+    renderStudioVoiceOptions();
+    renderStudioPromptPreview();
+    resultsArea.innerHTML = `<div class="alert success">${studioVoices.length} Studio TTS voice(s) loaded.</div>`;
+  } catch (e) {
+    resultsArea.innerHTML = `<div class="alert error">Voice lookup failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function probeStudioAudio() {
+  const resultsArea = document.getElementById("results-area");
+  const prompt = studioPrompts[0];
+  const voice = selectedStudioVoice();
+  if (!prompt) {
+    resultsArea.innerHTML = `<div class="alert error">Preview playbook prompts before probing audio.</div>`;
+    return;
+  }
+  try {
+    const res = await fetch("/api/run/five9/prompt-studio/audio-probe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...studioCredentialPayload(),
+        prompt_text: prompt.text,
+        selected_voice: voice,
+      }),
+    });
+    const data = await readApiResponse(res);
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    resultsArea.innerHTML = `<div class="alert success">Audio probe saved ${escHtml(data.bytes)} bytes to ${escHtml(data.wav_path)} via ${escHtml(data.source)}.</div>`;
+  } catch (e) {
+    resultsArea.innerHTML = `<div class="alert error">Audio probe failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function renderStudioVoiceOptions() {
+  const options = studioVoices.map(voice => (
+    `<option value="${escHtml(voice.tts_voice_id)}">${escHtml(voice.voice_name || voice.tts_label || voice.tts_voice_id)}</option>`
+  )).join("");
+  const globalSelect = document.getElementById("f-studio-global-voice");
+  globalSelect.innerHTML = options || `<option value="">Fetch Studio voices first</option>`;
+}
+
+function renderStudioPromptPreview() {
+  const card = document.getElementById("studio-preview-card");
+  const summary = document.getElementById("studio-preview-summary");
+  const target = document.getElementById("studio-prompt-preview");
+  if (!card || !target) return;
+  card.style.display = studioPrompts.length ? "block" : "none";
+  summary.textContent = `${studioPrompts.length} prompt(s) extracted from the playbook.`;
+  const voiceOptions = studioVoices.map(voice => (
+    `<option value="${escHtml(voice.tts_voice_id)}">${escHtml(voice.voice_name || voice.tts_label || voice.tts_voice_id)}</option>`
+  )).join("");
+  target.innerHTML = `
+    <table>
+      <thead><tr><th>Prompt</th><th>Text</th><th>Voice Override</th></tr></thead>
+      <tbody>
+        ${studioPrompts.map((prompt, index) => `
+          <tr>
+            <td>${escHtml(prompt.prompt_name)}</td>
+            <td>${escHtml(prompt.text)}</td>
+            <td><select id="studio-voice-${index}">${voiceOptions || `<option value="">Fetch voices first</option>`}</select></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>`;
 }
 
 // ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import textwrap
 import traceback
+import uuid
 from pathlib import Path
 from fastapi import FastAPI, Form, HTTPException, Query
 from fastapi import File, UploadFile
@@ -51,6 +52,13 @@ from src.tools.Five9.rollback_pack import dispatcher as five9_rollback
 from src.tools.Five9.ivr.scripts import dispatcher as five9_ivr_scripts
 from src.tools.Five9.ivr.builder import facade as five9_ivr_builder
 from src.tools.Five9.common.soap_client import Five9ConfigClient
+from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import (
+    DEFAULT_STUDIO_BASE_URL,
+    DEFAULT_STUDIO_SCOPE,
+    StudioPromptClient,
+    run_studio_prompt_flow,
+    save_audio_probe,
+)
 
 TOOL_PATHS = {
     "five9.prompt_bulk_upload": ROOT / "src" / "tools" / "Five9" / "Prompt_Management" / "Prompt_Bulk_Upload",
@@ -171,6 +179,19 @@ def get_five9_credentials():
         "username": os.environ.get("FIVE9_USERNAME", ""),
         "password": os.environ.get("FIVE9_PASSWORD", ""),
         "domain": os.environ.get("FIVE9_DOMAIN", "api.five9.com"),
+    }
+
+
+@app.get("/api/credentials/studio-prompt")
+def get_studio_prompt_credentials():
+    env_file = TOOL_PATHS["five9.prompt_bulk_upload"] / ".env"
+    if env_file.exists():
+        load_dotenv(env_file, override=False)
+    return {
+        "studio_base_url": os.environ.get("STUDIO_BASE_URL", DEFAULT_STUDIO_BASE_URL),
+        "studio_scope": os.environ.get("STUDIO_SCOPE", DEFAULT_STUDIO_SCOPE),
+        "studio_scope_id": os.environ.get("STUDIO_SCOPE_ID", ""),
+        "studio_api_key": os.environ.get("STUDIO_API_KEY", ""),
     }
 
 
@@ -440,6 +461,29 @@ class PromptBulkUploadRequest(BaseModel):
     username: str
     password: str
     dry_run: bool = False
+
+
+class StudioCredentialsRequest(BaseModel):
+    studio_api_key: str
+    studio_base_url: str = DEFAULT_STUDIO_BASE_URL
+    studio_scope: str = DEFAULT_STUDIO_SCOPE
+    studio_scope_id: str
+
+
+class StudioAudioProbeRequest(StudioCredentialsRequest):
+    prompt_text: str
+    selected_voice: Dict[str, Any]
+
+
+class StudioPromptFlowRunRequest(StudioCredentialsRequest):
+    approved: bool = False
+    prompts: List[Dict[str, Any]]
+    selected_voice: Dict[str, Any]
+    voice_overrides: Dict[str, Dict[str, Any]] = {}
+    overwrite: bool = False
+    five9_domain: str = "api.five9.com"
+    five9_username: str = ""
+    five9_password: str = ""
 
 
 class Five9PreflightRequest(BaseModel):
@@ -1094,6 +1138,130 @@ def run_five9_preflight(req: Five9PreflightRequest):
             "live": req.mode == "live",
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Five9 — Prompt Bulk Upload (Playbook Studio Flow)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/run/five9/prompt-studio/preview")
+def preview_studio_playbook_prompts(file: UploadFile = File(...)):
+    filename = Path(file.filename or "").name
+    if not filename.lower().endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail="Only .xlsx playbooks are supported")
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            target = Path(tmp_dir) / filename
+            target.write_bytes(file.file.read())
+            analyzed = analyze_playbook(target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Prompt preview failed: {e}")
+    prompts = analyzed.get("entities", {}).get("prompts", [])
+    return {
+        "source": analyzed.get("source", {"file_name": filename}),
+        "prompts": prompts,
+        "summary": {"total": len(prompts)},
+    }
+
+
+@app.post("/api/run/five9/prompt-studio/voices")
+def list_studio_tts_voices(req: StudioCredentialsRequest):
+    _validate_studio_credentials(req)
+    try:
+        client = _studio_prompt_client(req)
+        voices = client.list_tts_voices()
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail=f"Studio voice lookup failed: {e}")
+    return {"voices": voices, "summary": {"total": len(voices)}}
+
+
+@app.post("/api/run/five9/prompt-studio/audio-probe")
+def probe_studio_prompt_audio(req: StudioAudioProbeRequest):
+    _validate_studio_credentials(req)
+    if not req.prompt_text.strip():
+        raise HTTPException(status_code=400, detail="prompt_text is required")
+    try:
+        result = save_audio_probe(
+            studio_client=_studio_prompt_client(req),
+            prompt_text=req.prompt_text,
+            voice=req.selected_voice,
+            output_dir=_studio_output_dir("probe"),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail=f"Studio audio probe failed: {e}")
+    return result
+
+
+@app.post("/api/run/five9/prompt-studio/run")
+def run_studio_prompt_flow_route(req: StudioPromptFlowRunRequest):
+    if not req.approved:
+        raise HTTPException(status_code=403, detail="Studio prompt flow requires explicit approval")
+    _validate_studio_credentials(req)
+    if not req.five9_username.strip() or not req.five9_password:
+        raise HTTPException(status_code=400, detail="Five9 VCC username and password are required")
+    if not req.prompts:
+        raise HTTPException(status_code=400, detail="At least one prompt is required")
+
+    tool_path = str(TOOL_PATHS["five9.prompt_bulk_upload"])
+    if tool_path not in sys.path:
+        sys.path.insert(0, tool_path)
+    try:
+        from five9_prompts import Five9PromptClient
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to import VCC prompt client: {e}")
+
+    try:
+        result = run_studio_prompt_flow(
+            studio_client=_studio_prompt_client(req),
+            vcc_client=Five9PromptClient(
+                username=req.five9_username,
+                password=req.five9_password,
+                domain=req.five9_domain,
+            ),
+            prompts=req.prompts,
+            voice=req.selected_voice,
+            voice_overrides=req.voice_overrides,
+            overwrite=req.overwrite,
+            output_dir=_studio_output_dir("run"),
+            approved=req.approved,
+        )
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail=f"Studio prompt flow failed: {e}")
+    return result
+
+
+def _validate_studio_credentials(req: StudioCredentialsRequest) -> None:
+    if not req.studio_api_key.strip():
+        raise HTTPException(status_code=400, detail="Studio API key is required")
+    if not req.studio_scope_id.strip():
+        raise HTTPException(status_code=400, detail="Studio scope-id is required")
+    if (req.studio_scope or "").strip() not in {"ac", "sp"}:
+        raise HTTPException(status_code=400, detail="Studio scope must be 'ac' or 'sp'")
+
+
+def _studio_prompt_client(req: StudioCredentialsRequest) -> StudioPromptClient:
+    return StudioPromptClient(
+        base_url=req.studio_base_url,
+        api_key=req.studio_api_key,
+        scope=req.studio_scope,
+        scope_id=req.studio_scope_id,
+    )
+
+
+def _studio_output_dir(kind: str) -> Path:
+    return ROOT / "outputs" / "prompt_audio" / f"{kind}-{uuid.uuid4().hex[:12]}"
 
 
 @app.post("/api/run/five9/prompt-bulk-upload")
