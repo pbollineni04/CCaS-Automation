@@ -1557,7 +1557,7 @@ function renderPromptBulkUploadForm(container, tool) {
             <div class="field">
               <label>Global Studio TTS voice</label>
               <input type="text" id="f-studio-global-voice-search" placeholder="Search voices" oninput="filterStudioVoiceSelect('f-studio-global-voice', this.value)">
-              <select id="f-studio-global-voice"></select>
+              <select id="f-studio-global-voice" onchange="applyGlobalStudioVoiceToPrompts()"></select>
               <span class="hint">Fetch voices from Studio, then apply one voice to all prompts or override individual rows.</span>
             </div>
             <div class="field">
@@ -1826,6 +1826,15 @@ function studioVoiceOverrides() {
   return overrides;
 }
 
+function applyGlobalStudioVoiceToPrompts() {
+  const globalSelect = document.getElementById("f-studio-global-voice");
+  if (!globalSelect || !globalSelect.value) return;
+  studioPrompts.forEach((_, index) => {
+    const select = document.getElementById(`studio-voice-${index}`);
+    if (select) select.value = globalSelect.value;
+  });
+}
+
 function studioVoiceLabel(voice) {
   return voice.voice_name || voice.tts_label || voice.tts_voice_id || "";
 }
@@ -1949,6 +1958,7 @@ function renderStudioVoiceOptions() {
   const globalSelect = document.getElementById("f-studio-global-voice");
   globalSelect.innerHTML = options || `<option value="">Fetch Studio voices first</option>`;
   filterStudioVoiceSelect("f-studio-global-voice", document.getElementById("f-studio-global-voice-search").value);
+  applyGlobalStudioVoiceToPrompts();
 }
 
 function renderStudioPromptPreview() {
@@ -1975,6 +1985,7 @@ function renderStudioPromptPreview() {
         `).join("")}
       </tbody>
     </table>`;
+  applyGlobalStudioVoiceToPrompts();
 }
 
 // ---------------------------------------------------------------------------

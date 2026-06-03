@@ -338,6 +338,8 @@ class StudioPromptRouteTests(unittest.TestCase):
         self.assertIn("f-studio-global-voice-search", ui_html)
         self.assertIn("studio-voice-search-", ui_html)
         self.assertIn("filterStudioVoiceSelect", ui_html)
+        self.assertIn("applyGlobalStudioVoiceToPrompts", ui_html)
+        self.assertIn('id="f-studio-global-voice" onchange="applyGlobalStudioVoiceToPrompts()"', ui_html)
         self.assertIn("Search voices", ui_html)
         self.assertIn("Five9 VCC endpoint", ui_html)
         self.assertIn("f-domain-custom", ui_html)
