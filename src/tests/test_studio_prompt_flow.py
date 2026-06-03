@@ -198,6 +198,22 @@ class StudioPromptClientTests(unittest.TestCase):
         self.assertEqual(metadata_audio.metadata["path"], "/tts/a.wav")
         self.assertEqual(downloaded, b"RIFFdownload")
 
+    def test_download_wav_file_uses_signed_audio_url_directly(self):
+        from src.tools.Five9.Prompt_Management.Prompt_Bulk_Upload.studio_prompts import StudioPromptClient
+
+        session = FakeStudioSession([
+            FakeJsonResponse({}, content=b"RIFFsigned", headers={"Content-Type": "audio/wav"})
+        ])
+        client = StudioPromptClient("https://studio.example", "key", "ac", "1", session=session)
+
+        downloaded = client.download_wav_file({"audio_url": "https://storage.example/audio.wav?signature=abc"})
+
+        self.assertEqual(downloaded, b"RIFFsigned")
+        method, url, kwargs = session.calls[0]
+        self.assertEqual(method, "GET")
+        self.assertEqual(url, "https://storage.example/audio.wav?signature=abc")
+        self.assertNotIn("headers", kwargs)
+
 
 class StudioPromptFlowTests(unittest.TestCase):
     def test_flow_skips_existing_by_default_and_redacts_secrets(self):

@@ -140,6 +140,12 @@ class StudioPromptClient:
         return StudioAudioResult(metadata=_first_mapping(payload), content_type=content_type)
 
     def download_wav_file(self, metadata: Mapping[str, Any]) -> bytes:
+        audio_url = metadata.get("audio_url") or metadata.get("url")
+        if audio_url:
+            response = self._session.get(str(audio_url), timeout=120)
+            response.raise_for_status()
+            return response.content
+
         response = self._session.post(
             self._url("/api/api/file-download-from-url"),
             headers=self._headers(),
