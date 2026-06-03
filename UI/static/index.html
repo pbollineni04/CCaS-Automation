@@ -1570,13 +1570,16 @@ function renderPromptBulkUploadForm(container, tool) {
 
           <!-- Shared fields -->
           <div class="field">
-            <label>Domain</label>
-            <select id="f-domain">
+            <label>Five9 VCC endpoint</label>
+            <select id="f-domain" onchange="setFive9DomainMode('f')">
               <option value="api.five9.com">api.five9.com (US)</option>
-              <option value="api.five9.eu">api.five9.eu (EU)</option>
+              <option value="api.five9.eu">api.five9.eu (EU/UK)</option>
               <option value="api.five9.ca">api.five9.ca (CA)</option>
               <option value="api.eu.five9.com">api.eu.five9.com (EU alt)</option>
+              <option value="custom">Custom endpoint</option>
             </select>
+            <input type="text" id="f-domain-custom" placeholder="Custom Five9 VCC host, for example api.five9.eu" style="display:none">
+            <span class="hint">Used for Five9 VCC Admin Web Service prompt lookup and WAV upload.</span>
           </div>
 
         </div>
@@ -1716,7 +1719,7 @@ function loadSample() {
 
 function collectPromptBulkUploadForm() {
   const shared = {
-    domain: document.getElementById("f-domain").value,
+    domain: resolveFive9Endpoint("f"),
     username: document.getElementById("f-username").value.trim(),
     password: document.getElementById("f-password").value,
     dry_run: document.getElementById("f-dryrun").checked,
@@ -1775,6 +1778,36 @@ function syncStudioRegionPreset() {
   const region = document.getElementById("f-studio-region");
   const matching = [...region.options].find(option => option.value === baseUrl);
   region.value = matching ? matching.value : "custom";
+}
+
+function resolveFive9Endpoint(prefix) {
+  const select = document.getElementById(`${prefix}-domain`);
+  const custom = document.getElementById(`${prefix}-domain-custom`);
+  if (select && select.value === "custom" && custom) return custom.value.trim();
+  return select ? select.value : "";
+}
+
+function setFive9DomainMode(prefix) {
+  const select = document.getElementById(`${prefix}-domain`);
+  const custom = document.getElementById(`${prefix}-domain-custom`);
+  if (!select || !custom) return;
+  const isCustom = select.value === "custom";
+  custom.style.display = isCustom ? "block" : "none";
+  if (isCustom) custom.focus();
+}
+
+function applyLoadedFive9Domain(prefix, domain) {
+  const select = document.getElementById(`${prefix}-domain`);
+  if (!select || !domain) return;
+  const custom = document.getElementById(`${prefix}-domain-custom`);
+  const matching = [...select.options].find(option => option.value === domain);
+  if (matching) {
+    select.value = domain;
+  } else if (custom && [...select.options].some(option => option.value === "custom")) {
+    select.value = "custom";
+    custom.value = domain;
+  }
+  setFive9DomainMode(prefix);
 }
 
 function selectedStudioVoice() {
@@ -4409,9 +4442,7 @@ async function loadCredentials(endpoint, prefix = "f") {
     if (data.username) document.getElementById(`${prefix}-username`).value = data.username;
     if (data.password) document.getElementById(`${prefix}-password`).value = data.password;
     if (data.domain) {
-      const sel = document.getElementById(`${prefix}-domain`);
-      const opt = [...sel.options].find(o => o.value === data.domain);
-      if (opt) sel.value = data.domain;
+      applyLoadedFive9Domain(prefix, data.domain);
     }
     btn.textContent = "Loaded";
     setTimeout(() => { btn.textContent = "Load from .env"; btn.disabled = false; }, 1500);

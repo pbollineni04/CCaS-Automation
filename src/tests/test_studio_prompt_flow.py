@@ -339,6 +339,11 @@ class StudioPromptRouteTests(unittest.TestCase):
         self.assertIn("studio-voice-search-", ui_html)
         self.assertIn("filterStudioVoiceSelect", ui_html)
         self.assertIn("Search voices", ui_html)
+        self.assertIn("Five9 VCC endpoint", ui_html)
+        self.assertIn("f-domain-custom", ui_html)
+        self.assertIn("Custom endpoint", ui_html)
+        self.assertIn("resolveFive9Endpoint", ui_html)
+        self.assertIn("applyLoadedFive9Domain", ui_html)
 
     def _upload(self, name: str, data: bytes):
         class FakeUpload:
