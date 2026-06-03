@@ -394,6 +394,8 @@ def _extract_prompts(rows: list[list[str]]) -> list[dict[str, str]]:
     header_index = _find_header_index(rows, {"prompt name", "prompt script verbiage"})
     if header_index < 0:
         header_index = _find_header_index(rows, {"name", "prompt script verbiage"})
+    if header_index < 0:
+        return _extract_sectioned_note_prompts(rows)
     headers = _normalized_headers(rows[header_index]) if header_index >= 0 else {}
     name_col = headers.get("prompt name", headers.get("name", 0))
     text_col = headers.get("prompt script verbiage")
@@ -408,6 +410,48 @@ def _extract_prompts(rows: list[list[str]]) -> list[dict[str, str]]:
         if text:
             prompts.append({"prompt_name": name, "text": text})
     return prompts
+
+
+def _extract_sectioned_note_prompts(rows: list[list[str]]) -> list[dict[str, str]]:
+    prompts = []
+    current_section = ""
+    headers: dict[str, int] | None = None
+    for row in rows:
+        normalized = _normalized_headers(row)
+        if {"name", "notes"}.issubset(normalized):
+            headers = normalized
+            continue
+        section = _section_title(row)
+        if section and (headers is None or not _cell(row, headers.get("notes"))):
+            current_section = section
+            headers = None
+            continue
+        if headers is None:
+            continue
+
+        name = _clean_playbook_name(_cell(row, headers.get("name")))
+        text = _cell(row, headers.get("notes"))
+        status = _cell(row, headers.get("status")).lower()
+        if not name or normalized.get("name") is not None:
+            section = _section_title(row)
+            if section:
+                current_section = section
+                headers = None
+            continue
+        if not _is_data_name(name) or status == "ignore" or not text:
+            continue
+        prompt_name = _clean_playbook_name(
+            f"{current_section} - {name}" if current_section else name
+        )
+        prompts.append({"prompt_name": prompt_name, "text": text})
+    return prompts
+
+
+def _section_title(row: list[str]) -> str:
+    values = [_clean_playbook_name(cell) for cell in row if _clean_playbook_name(cell)]
+    if len(values) == 1 and _is_data_name(values[0]):
+        return values[0]
+    return ""
 
 
 def _extract_inbound_campaigns(rows: list[list[str]]) -> list[dict[str, Any]]:

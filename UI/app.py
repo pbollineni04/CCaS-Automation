@@ -1385,5 +1385,9 @@ def run_wav_dir_upload(req: WavDirUploadRequest):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    reload_dirs = [str(Path(__file__).parent)] + [str(p) for p in TOOL_PATHS.values()]
+    reload_dirs = [
+        str(Path(__file__).parent),
+        str(ROOT / "src" / "agent"),
+        *[str(p) for p in TOOL_PATHS.values()],
+    ]
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True, reload_dirs=reload_dirs)

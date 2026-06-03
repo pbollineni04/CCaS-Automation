@@ -124,6 +124,31 @@ class PlaybookFlowTests(unittest.TestCase):
         self.assertEqual(entities["dispositions"], ["Designer Sales"])
         self.assertEqual(write_plan[0]["params"]["name"], "Designer Sales")
 
+    def test_prompt_sheet_extracts_sectioned_name_status_notes_format(self):
+        from src.agent import playbook_flow
+
+        workbook = {
+            "Prompts": [
+                ["", "Client Line"],
+                ["", "Name", "Status", "Prompt Type", "File Name", "Notes"],
+                ["", "IVR Welcome", "", "Welcome", "Free Phone 0800", "Thank you for calling."],
+                ["", "Ignored Prompt", "ignore", "Welcome", "", "Do not use"],
+                ["", "Scotland Client"],
+                ["", "Name", "Status", "Prompt Type", "File Name", "Notes"],
+                ["", "IVR Options Scotland", "", "IVR Options", "", "Press 1 for orders."],
+            ],
+        }
+
+        entities = playbook_flow.extract_five9_entities(workbook)
+
+        self.assertEqual(
+            entities["prompts"],
+            [
+                {"prompt_name": "Client Line - IVR Welcome", "text": "Thank you for calling."},
+                {"prompt_name": "Scotland Client - IVR Options Scotland", "text": "Press 1 for orders."},
+            ],
+        )
+
     def test_core_write_plan_defensively_normalizes_structured_names(self):
         from src.agent import playbook_flow
 
